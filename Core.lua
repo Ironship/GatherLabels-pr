@@ -138,6 +138,11 @@ end
 
 -- Expansion of the running game, so the settings list only nodes that exist.
 function ns.GameExpansion()
+  if ns.IS_FOREVER then return 0 end
+  local toc = GetBuildInfo and select(4, GetBuildInfo())
+  if type(toc) == "number" and toc >= 10000 then
+    return math.floor(toc / 10000) - 1
+  end
   if GetClientDisplayExpansionLevel then return GetClientDisplayExpansionLevel() end
   if GetExpansionLevel then return GetExpansionLevel() end
   return 0
@@ -149,8 +154,7 @@ function ns.NamesFor(category)
   local list, maxExp = {}, ns.GameExpansion()
   for _, name in ipairs(ns.NODE_LIST[category]) do
     local node = ns.NODES[name]
-    -- Retail-only nodes (item 0) stay out of Classic and WoW Forever lists.
-    if node.exp <= maxExp and (node.item > 0 or ns.IS_RETAIL) then list[#list + 1] = name end
+    if node.exp <= maxExp then list[#list + 1] = name end
   end
   local extra = {}
   for name, c in pairs(ns.db.learned) do
