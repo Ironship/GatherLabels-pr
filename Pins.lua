@@ -3,6 +3,14 @@ local _, ns = ...
 -- Draws an icon (and optionally the name) on the minimap for every saved
 -- spot in range, at the same place the game draws its dot.
 
+local RING_TEX = "Interface\\AddOns\\GatherLabels\\Media\\Ring"
+local RING_COLORS = {
+  herb = { 0.35, 0.95, 0.35 },
+  ore = { 1.0, 0.78, 0.25 },
+  fish = { 0.35, 0.85, 1.0 },
+  treasure = { 1.0, 0.85, 0.35 },
+}
+
 local pins, used = {}, 0
 
 local function PinOnEnter(self)
@@ -36,6 +44,10 @@ local function GetPin(i)
   pin.icon = pin:CreateTexture(nil, "ARTWORK")
   pin.icon:SetAllPoints()
   pin.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+  pin.ring = pin:CreateTexture(nil, "ARTWORK")
+  pin.ring:SetAllPoints()
+  pin.ring:SetTexture(RING_TEX)
+  pin.ring:Hide()
   -- Brown frame: in a cave or building.
   pin.caveBorder = pin:CreateTexture(nil, "BACKGROUND")
   pin.caveBorder:SetPoint("TOPLEFT", -2, 2)
@@ -78,7 +90,7 @@ ns.ShownName = ShownName
 -- needs no new function (and no garbage) on every redraw.
 local cur = {}
 
-local function Place(x, y, name, spot, alpha, level)
+local function Place(x, y, name, spot, alpha, level, isLive)
   local c = cur
   local north, east = x - c.px, c.py - y
   local sx = (east * c.cos + north * c.sin) * c.pixelsPerYard
@@ -94,13 +106,23 @@ local function Place(x, y, name, spot, alpha, level)
   local db = ns.db
   local pin = GetPin(used)
   pin.spot, pin.wx, pin.wy, pin.name = spot, x, y, name
-  pin:SetSize(db.iconSize, db.iconSize)
+  local useRing = (not isLive) and db.ringMode and true or false
+  local size = useRing and math.max(db.iconSize + 4, 16) or db.iconSize
+  pin:SetSize(size, size)
   pin:ClearAllPoints()
   pin:SetPoint("CENTER", Minimap, "CENTER", sx, sy)
   pin:SetAlpha(alpha)
-  pin.icon:SetTexture(ns.Icon(name))
+  pin.ring:SetShown(useRing)
+  pin.icon:SetShown(not useRing)
+  if useRing then
+    local cat = (spot and spot.c) or ns.Category(name) or "herb"
+    local col = RING_COLORS[cat] or RING_COLORS.herb
+    pin.ring:SetVertexColor(col[1], col[2], col[3], 1)
+  else
+    pin.icon:SetTexture(ns.Icon(name))
+  end
   pin.level = level
-  pin.caveBorder:SetShown(spot.cave and true or false)
+  pin.caveBorder:SetShown((spot.cave and not useRing) and true or false)
   if level then
     pin.levelArrow:SetTexCoord(0, 1, level == "above" and 0 or 0.5, level == "above" and 0.5 or 1)
   end
@@ -130,7 +152,7 @@ local function Update(continent, px, py, facing, radius)
     local live = ns.liveContinent == continent and ns.liveDots or nil
     if live then
       for _, dot in ipairs(live) do
-        if ns.IsDrawn(dot.name) then Place(dot.x, dot.y, dot.name, dot.spot, 1, dot.level) end
+        if ns.IsDrawn(dot.name) then Place(dot.x, dot.y, dot.name, dot.spot, 1, dot.level, true) end
       end
     end
 
@@ -153,7 +175,7 @@ local function Update(continent, px, py, facing, radius)
                   if (dot.x - spot.x) ^ 2 + (dot.y - spot.y) ^ 2 < 225 then covered = true break end
                 end
               end
-              if name and not covered then Place(spot.x, spot.y, name, spot, alpha) end
+              if name and not covered then Place(spot.x, spot.y, name, spot, alpha, nil, false) end
             end
           end
         end
