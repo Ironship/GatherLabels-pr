@@ -121,6 +121,7 @@ local TABS = {
   { label = "Settings" },
   { label = "Herbs and Ore", "herb", "ore" },
   { label = "Fishing and Treasure", "fish", "treasure" },
+  { label = "This Zone", zone = true },
   { label = "Glow", glow = true },
 }
 
@@ -177,7 +178,7 @@ local function BuildSettingsPage(page)
     page.shineKinds[i] = check
   end
 
-  S.Divider(page, W + 18, 0, 440)
+  S.Divider(page, W + 18, 0, 490)
 
   -- Right column: look, saved spots.
   local x, RW = W + 36, 250
@@ -263,7 +264,7 @@ local function BuildGlowPage(page)
   page.note = S.Help(page, "", W)
   page.note:SetPoint("TOPLEFT", 0, y - 100)
 
-  S.Divider(page, W + 18, 0, 440)
+  S.Divider(page, W + 18, 0, 490)
 
   local x, RW = W + 36, 250
   S.Header(page, "Style", x, 0, RW)
@@ -335,18 +336,232 @@ local function BuildListPage(page, def)
   end
 end
 
+local selectedZoneMapID
+local sortedZoneIDs
+
+local function ZoneDisplayName(mapID)
+  if not mapID then return "Unknown zone" end
+  local info = C_Map and C_Map.GetMapInfo and C_Map.GetMapInfo(mapID)
+  return (info and info.name and info.name ~= "" and info.name) or ("Zone " .. mapID)
+end
+
+local function GetSortedZoneIDs()
+  if sortedZoneIDs then return sortedZoneIDs end
+  sortedZoneIDs = {}
+  local hasMapInfo = C_Map and C_Map.GetMapInfo
+  for mapID in pairs(ns.ZONE_DATA or {}) do
+    if not hasMapInfo or C_Map.GetMapInfo(mapID) ~= nil then
+      sortedZoneIDs[#sortedZoneIDs + 1] = mapID
+    end
+  end
+  table.sort(sortedZoneIDs, function(a, b)
+    local na, nb = ZoneDisplayName(a), ZoneDisplayName(b)
+    if na ~= nb then return na < nb end
+    return a < b
+  end)
+  return sortedZoneIDs
+end
+
+local function ZoneScrollList(parent, x, y, width, rows)
+  local rowH = 24
+  local box = S.Box(parent)
+  box:SetSize(width, math.max(190, rows * rowH + 10))
+  box:SetPoint("TOPLEFT", x, y)
+  box.offset = 0
+  box.items = {}
+  box.pool = {}
+  box.rows = {}
+  for i = 1, rows do
+    local row = CreateFrame("Frame", nil, box)
+    row:SetSize(width - 12, 22)
+    row:SetPoint("TOPLEFT", 6, -5 - (i - 1) * rowH)
+    if i % 2 == 0 then
+      local stripe = box:CreateTexture(nil, "BACKGROUND", nil, 1)
+      stripe:SetPoint("TOPLEFT", 4, -4 - (i - 1) * rowH)
+      stripe:SetPoint("BOTTOMRIGHT", box, "TOPRIGHT", -4, -4 - i * rowH)
+      stripe:SetColorTexture(1, 1, 1, 0.03)
+    end
+    row.icon = row:CreateTexture(nil, "ARTWORK")
+    row.icon:SetSize(18, 18)
+    row.icon:SetPoint("LEFT", 2, 0)
+    row.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+    row.text = S.Label(row, "")
+    row.text:SetPoint("LEFT", row.icon, "RIGHT", 6, 0)
+    row.text:SetPoint("RIGHT", row, "RIGHT", -4, 0)
+    row.text:SetJustifyH("LEFT")
+    row.text:SetWordWrap(false)
+    box.rows[i] = row
+  end
+  box.empty = S.Help(box, "None recorded for this zone", width - 20)
+  box.empty:SetPoint("CENTER")
+  box.empty:SetJustifyH("CENTER")
+  box.position = S.Help(box, "")
+  box.position:SetPoint("TOPRIGHT", box, "BOTTOMRIGHT", -2, -3)
+
+  function box:ClearItems()
+    self.count = 0
+  end
+
+  function box:AddItem(icon, text, alpha)
+    self.count = (self.count or 0) + 1
+    local entry = self.pool[self.count]
+    if not entry then
+      entry = {}
+      self.pool[self.count] = entry
+    end
+    entry.icon, entry.text, entry.alpha = icon, text, alpha or 1
+    self.items[self.count] = entry
+  end
+
+  function box:Render()
+    local total = self.count or 0
+    local maxOffset = math.max(0, total - rows)
+    self.offset = math.min(math.max(self.offset, 0), maxOffset)
+    for i, row in ipairs(self.rows) do
+      local entry = (self.offset + i <= total) and self.items[self.offset + i] or nil
+      if entry then
+        row.icon:SetTexture(entry.icon)
+        row.text:SetText(entry.text)
+        row:SetAlpha(entry.alpha or 1)
+      end
+      row:SetShown(entry ~= nil)
+    end
+    self.empty:SetShown(total == 0)
+    if total > rows then
+      self.position:SetText(string.format("%d-%d of %d, scroll", self.offset + 1,
+        math.min(self.offset + rows, total), total))
+    else
+      self.position:SetText("")
+    end
+  end
+
+  box:EnableMouseWheel(true)
+  box:SetScript("OnMouseWheel", function(self, delta)
+    self.offset = self.offset - delta * (IsShiftKeyDown() and rows or 3)
+    self:Render()
+  end)
+  return box
+end
+
+local function FillZoneNodes(box, names)
+  box:ClearItems()
+  if names then
+    for i = 1, #names do
+      local name = names[i]
+      local need, _, color = ns.SkillInfo(name)
+      local text = need and (name .. "  |cff" .. color .. need .. "|r") or name
+      local dim = ((ns.TooLow and ns.TooLow(name)) or (ns.IsGrey and ns.IsGrey(name))) and 0.5 or 1
+      box:AddItem(ns.Icon(name), text, dim)
+    end
+  end
+  box:Render()
+end
+
+local function BuildZonePage(page)
+  local W = 284
+  page.zoneTitle = S.Label(page, "", "GameFontNormalLarge")
+  page.zoneTitle:SetPoint("TOPLEFT", 0, 0)
+  page.zoneTitle:SetSize(430, 18)
+  page.zoneTitle:SetJustifyH("LEFT")
+  page.zoneSub = S.Help(page, "Herbs, ore and fish known in this zone (reference only).", 430)
+  page.zoneSub:SetPoint("TOPLEFT", 0, -20)
+
+  local function StepZone(dir)
+    local ids = GetSortedZoneIDs()
+    if #ids == 0 then return end
+    local curMap = (ns.ZoneMap and ns.ZoneMap()) or (C_Map and C_Map.GetBestMapForUnit and C_Map.GetBestMapForUnit("player"))
+    local active = selectedZoneMapID or curMap
+    local idx = 1
+    for i, id in ipairs(ids) do
+      if id == active then idx = i break end
+    end
+    idx = ((idx - 1 + dir) % #ids) + 1
+    selectedZoneMapID = ids[idx]
+    page.herbsBox.offset, page.oresBox.offset, page.fishBox.offset = 0, 0, 0
+    ns.OnSettingsChanged()
+  end
+
+  page.nextBtn = S.Button(page, ">", 28, "Next zone", "Browse next zone")
+  page.nextBtn:SetPoint("TOPRIGHT", 0, 0)
+  page.nextBtn:SetScript("OnClick", function() StepZone(1) end)
+
+  page.hereBtn = S.Button(page, "Here", 56, "Current zone", "Show your current zone")
+  page.hereBtn:SetPoint("RIGHT", page.nextBtn, "LEFT", -4, 0)
+  page.hereBtn:SetScript("OnClick", function()
+    selectedZoneMapID = nil
+    page.herbsBox.offset, page.oresBox.offset, page.fishBox.offset = 0, 0, 0
+    ns.OnSettingsChanged()
+  end)
+
+  page.prevBtn = S.Button(page, "<", 28, "Previous zone", "Browse previous zone")
+  page.prevBtn:SetPoint("RIGHT", page.hereBtn, "LEFT", -4, 0)
+  page.prevBtn:SetScript("OnClick", function() StepZone(-1) end)
+
+  S.Header(page, "Herbs", 0, -44, W)
+  page.herbsBox = ZoneScrollList(page, 0, -68, W, 7)
+
+  S.Header(page, "Ore", 0, -264, W)
+  page.oresBox = ZoneScrollList(page, 0, -288, W, 7)
+
+  local RX = W + 18
+  S.Header(page, "Fishing", RX, -44, W)
+  page.fishBox = ZoneScrollList(page, RX, -68, W, 16)
+
+  function page:Refresh()
+    local curMap = (ns.ZoneMap and ns.ZoneMap()) or (C_Map and C_Map.GetBestMapForUnit and C_Map.GetBestMapForUnit("player"))
+    local activeMapID = selectedZoneMapID or curMap
+    local title = ZoneDisplayName(activeMapID)
+    if activeMapID and activeMapID == curMap and not selectedZoneMapID then
+      page.zoneTitle:SetText(title .. "  |cffaaaaaa(here)|r")
+    else
+      page.zoneTitle:SetText(title)
+    end
+    page.hereBtn:SetAlpha((selectedZoneMapID and selectedZoneMapID ~= curMap) and 1 or 0.5)
+
+    local z = activeMapID and ns.ZONE_DATA and ns.ZONE_DATA[activeMapID]
+    FillZoneNodes(page.herbsBox, z and z.herbs)
+    FillZoneNodes(page.oresBox, z and z.ores)
+
+    page.fishBox:ClearItems()
+    if z and z.pools then
+      for i = 1, #z.pools do
+        local name = z.pools[i]
+        page.fishBox:AddItem(ns.Icon(name), name .. "  |cff70c8e0(pool)|r", 1)
+      end
+    end
+    if z and z.fish then
+      for i = 1, #z.fish do
+        local f = z.fish[i]
+        local icon = (C_Item and C_Item.GetItemIconByID and C_Item.GetItemIconByID(f[2]))
+          or (GetItemIcon and GetItemIcon(f[2]))
+          or "Interface\\Icons\\INV_Misc_Fish_02"
+        local fname = (C_Item and C_Item.GetItemNameByID and C_Item.GetItemNameByID(f[2]))
+          or (GetItemInfo and GetItemInfo(f[2]))
+          or f[1]
+        page.fishBox:AddItem(icon, fname, 1)
+      end
+    end
+    page.fishBox:Render()
+  end
+end
+
 local function SelectTab(i)
   frame.tab = i
   for p, page in ipairs(frame.pages) do page:SetShown(p == i) end
-  frame.topHelp:SetText((i == 1 or TABS[i].glow) and "Every change is saved the moment you click it."
-    or "Untick a node to keep it off the minimap (and from glowing). The number is how many spots you've found.")
+  if i == 1 or TABS[i].glow then
+    frame.topHelp:SetText("Every change is saved the moment you click it.")
+  elseif TABS[i].zone then
+    frame.topHelp:SetText("Herbs, ore and fish recorded for the zone (reference only).")
+  else
+    frame.topHelp:SetText("Untick a node to keep it off the minimap (and from glowing). The number is how many spots you've found.")
+  end
   S.SelectTab(frame, i)
   ns.OnSettingsChanged()
 end
 
 local function Build()
   frame = S.Window({ name = "GatherLabelsFrame", title = "Gather Labels",
-    icon = "Interface\\Icons\\INV_Misc_Flower_02", width = 640, height = 560 })
+    icon = "Interface\\Icons\\INV_Misc_Flower_02", width = 640, height = 610 })
   frame:SetScript("OnShow", function() SelectTab(frame.tab or 1) end)
   frame:HookScript("OnHide", function()
     if forgetConfirm then forgetConfirm:Hide() end
@@ -362,12 +577,14 @@ local function Build()
     page:Hide()
     frame.pages[i] = page
     if i == 1 then BuildSettingsPage(page)
+    elseif def.zone then BuildZonePage(page)
     elseif def.glow then BuildGlowPage(page)
     else BuildListPage(page, def) end
   end
   frame.page = frame.pages[1]
   for i, def in ipairs(TABS) do
-    if def.glow then frame.glowPage = frame.pages[i] end
+    if def.glow then frame.glowPage = frame.pages[i]
+    elseif def.zone then frame.zonePage = frame.pages[i]; frame.zoneTabIndex = i end
   end
 
   local forget = S.Button(frame, "Forget all spots", 130, "Forget all spots",
@@ -415,6 +632,7 @@ function ns.OnSettingsChanged()
     for _, list in pairs(frame.lists) do
       if list:IsVisible() then list:Refresh(counts) end
     end
+    if frame.zonePage and frame.zonePage:IsVisible() then frame.zonePage:Refresh() end
   end
   frame.routeButton:SetText(ns.RouteActive() and "Stop farming route" or "Start farming route")
   local g = frame.glowPage
@@ -461,3 +679,18 @@ function ns.ToggleSettings()
   if not frame then Build() end
   frame:SetShown(not frame:IsShown())
 end
+
+function ns.ShowZoneTab()
+  if not frame then Build() end
+  selectedZoneMapID = nil
+  frame:Show()
+  if frame.zoneTabIndex then SelectTab(frame.zoneTabIndex) end
+end
+
+local zoneEvents = CreateFrame("Frame")
+zoneEvents:RegisterEvent("ZONE_CHANGED_NEW_AREA")
+zoneEvents:RegisterEvent("PLAYER_ENTERING_WORLD")
+zoneEvents:SetScript("OnEvent", function()
+  selectedZoneMapID = nil
+  if frame and frame:IsShown() then ns.OnSettingsChanged() end
+end)

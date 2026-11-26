@@ -10,6 +10,7 @@
 
 Skin.lua
 Nodes.lua
+ZoneData.lua
 Core.lua
 Skill.lua
 Scan.lua
