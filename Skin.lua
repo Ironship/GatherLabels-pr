@@ -175,6 +175,51 @@ end
 -- Window
 ------------------------------------------------------------------------
 
+-- Closes a frame on Escape out of combat without inserting into UISpecialFrames
+-- (UISpecialFrames taints CloseSpecialWindows / FrameControlsManager in Gamepad Mode).
+local function AttachCloseOnEscape(f)
+  if type(f) ~= "table" or type(f.EnableKeyboard) ~= "function" then return end
+  local function inCombat() return InCombatLockdown and InCombatLockdown() == true end
+  local function syncKeys()
+    if inCombat() then
+      pcall(f.EnableKeyboard, f, false)
+    elseif f:IsShown() then
+      pcall(f.EnableKeyboard, f, true)
+      if type(f.SetPropagateKeyboardInput) == "function" then
+        pcall(f.SetPropagateKeyboardInput, f, true)
+      end
+    end
+  end
+  f:HookScript("OnShow", syncKeys)
+  f:HookScript("OnHide", function()
+    if not inCombat() then pcall(f.EnableKeyboard, f, false) end
+  end)
+  f:HookScript("OnKeyDown", function(self, key)
+    if inCombat() then return end
+    if key == "ESCAPE" then
+      if GetCurrentKeyBoardFocus and GetCurrentKeyBoardFocus() then
+        if type(self.SetPropagateKeyboardInput) == "function" then
+          pcall(self.SetPropagateKeyboardInput, self, true)
+        end
+        return
+      end
+      if type(self.SetPropagateKeyboardInput) == "function" then
+        pcall(self.SetPropagateKeyboardInput, self, false)
+      end
+      Sound("IG_MAINMENU_CLOSE")
+      self:Hide()
+    elseif type(self.SetPropagateKeyboardInput) == "function" then
+      pcall(self.SetPropagateKeyboardInput, self, true)
+    end
+  end)
+  local watcher = CreateFrame("Frame", nil, f)
+  pcall(watcher.RegisterEvent, watcher, "PLAYER_REGEN_DISABLED")
+  pcall(watcher.RegisterEvent, watcher, "PLAYER_REGEN_ENABLED")
+  watcher:SetScript("OnEvent", syncKeys)
+  syncKeys()
+end
+S.CloseOnEscape = AttachCloseOnEscape
+
 -- o = { name, title, icon, width, height, strata }
 -- Returns the frame with:
 --   f.Inset   the dark content area (from 60 px down to the bottom bar)
@@ -206,7 +251,16 @@ function S.Window(o)
   f:SetScript("OnDragStart", f.StartMoving)
   f:SetScript("OnDragStop", f.StopMovingOrSizing)
   f:Hide()
-  if o.name then tinsert(UISpecialFrames, o.name) end -- Escape closes it
+  -- Call f:Hide() directly instead of Blizzard's HideParentPanel/HideUIPanel or UISpecialFrames,
+  -- which register the frame with FrameControlsManager and trigger SetPreferredGamepadInteractTarget taint.
+  local closeBtn = f.CloseButton or (o.name and _G[o.name .. "CloseButton"])
+  if closeBtn then
+    closeBtn:SetScript("OnClick", function()
+      Sound("IG_MAINMENU_CLOSE")
+      f:Hide()
+    end)
+  end
+  AttachCloseOnEscape(f)
 
   f.attic = CreateFrame("Frame", nil, f)
   f.attic:SetPoint("TOPLEFT", 62, -24)
