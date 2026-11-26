@@ -390,7 +390,7 @@ end
 
 local function Nearby(continent, px, py)
   local n = 0
-  if ns.ScannerRunning and ns.ScannerRunning() then
+  if ns.HasLiveDots and ns.HasLiveDots() then
     if ns.liveContinent == continent and ns.liveDots then
       local r2 = Range() ^ 2
       for _, dot in ipairs(ns.liveDots) do
@@ -430,7 +430,7 @@ local function StopAuto()
   end
 end
 
-local lastAutoContinent, lastAutoX, lastAutoY, lastAutoRange, lastAutoScans, lastAutoRadius, lastAutoPoolGlow, lastAutoScanning
+local lastAutoContinent, lastAutoX, lastAutoY, lastAutoRange, lastAutoScans, lastAutoRadius, lastAutoPoolGlow, lastAutoHasLive
 local autoDirty = true
 
 local function UpdateAuto()
@@ -450,15 +450,15 @@ local function UpdateAuto()
   local scans = ns.liveScans
   local minimapRadius = ns.MinimapRadius()
   local poolGlow = PoolGlow()
-  local scanning = ns.ScannerRunning and ns.ScannerRunning() or false
+  local hasLive = ns.HasLiveDots and ns.HasLiveDots() or false
   if not autoDirty and lastAutoContinent == continent and lastAutoRange == range and lastAutoScans == scans
-      and lastAutoRadius == minimapRadius and lastAutoPoolGlow == poolGlow and lastAutoScanning == scanning
+      and lastAutoRadius == minimapRadius and lastAutoPoolGlow == poolGlow and lastAutoHasLive == hasLive
       and (not auto or want) and lastAutoX and (lastAutoX - px) ^ 2 + (lastAutoY - py) ^ 2 < 1 then
     return
   end
   autoDirty = false
-  lastAutoContinent, lastAutoX, lastAutoY, lastAutoRange, lastAutoScans, lastAutoRadius, lastAutoPoolGlow, lastAutoScanning =
-    continent, px, py, range, scans, minimapRadius, poolGlow, scanning
+  lastAutoContinent, lastAutoX, lastAutoY, lastAutoRange, lastAutoScans, lastAutoRadius, lastAutoPoolGlow, lastAutoHasLive =
+    continent, px, py, range, scans, minimapRadius, poolGlow, hasLive
   local best, bestDist, current
   for _, node in ipairs(Nearby(continent, px, py)) do
     local d = (node.x - px) ^ 2 + (node.y - py) ^ 2

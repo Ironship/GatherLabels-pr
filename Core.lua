@@ -378,9 +378,9 @@ watcher:SetScript("OnUpdate", function(_, elapsed)
   else
     lastWorldText = nil
   end
-  -- While the scanner (Scan.lua) runs, the tooltip can show the points it
-  -- asks about rather than what is under the mouse, so it does the learning.
-  if not ns.db or not ns.db.learnHover or (ns.ScannerRunning and ns.ScannerRunning())
+  -- While the scanner (Scan.lua) is actively sweeping, the tooltip can show the points it
+  -- asks about rather than what is under the mouse, so wait until the sweep finishes.
+  if not ns.db or not ns.db.learnHover or (ns.ScannerSweeping and ns.ScannerSweeping())
       or not GameTooltip:IsShown()
       or GameTooltip:GetOwner() ~= Minimap then
     lastText, lastX, lastY = nil, nil, nil
@@ -482,6 +482,7 @@ end)
 
 function ns.Set(key, value)
   ns.db[key] = value
+  if key == "scan" and value and ns.ResetScanner then ns.ResetScanner() end
   if ns.OnSettingsChanged then ns.OnSettingsChanged() end
   if ns.RefreshPins then ns.RefreshPins() end
   if key == "tracker" and ns.TrackerSettingsChanged then ns.TrackerSettingsChanged() end
