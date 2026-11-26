@@ -55,13 +55,21 @@ local function Price(itemID)
   return 0, false
 end
 
+local GOLD_ICON = "|TInterface\\MoneyFrame\\UI-GoldIcon:12:12:2:0|t"
+local SILVER_ICON = "|TInterface\\MoneyFrame\\UI-SilverIcon:12:12:2:0|t"
+local COPPER_ICON = "|TInterface\\MoneyFrame\\UI-CopperIcon:12:12:2:0|t"
+
 local function Money(copper)
-  copper = math.floor(copper)
-  if GetCoinTextureString then return GetCoinTextureString(copper) end
-  local g, s, c = math.floor(copper / 10000), math.floor(copper / 100) % 100, copper % 100
-  if g > 0 then return string.format("%dg %ds %dc", g, s, c) end
-  if s > 0 then return string.format("%ds %dc", s, c) end
-  return c .. "c"
+  copper = math.max(0, math.floor(copper or 0))
+  local g = math.floor(copper / 10000)
+  local s = math.floor(copper / 100) % 100
+  local c = copper % 100
+  if g > 0 then
+    return string.format("|cffffffff%d|r%s |cffffffff%d|r%s |cffffffff%d|r%s", g, GOLD_ICON, s, SILVER_ICON, c, COPPER_ICON)
+  elseif s > 0 then
+    return string.format("|cffffffff%d|r%s |cffffffff%d|r%s", s, SILVER_ICON, c, COPPER_ICON)
+  end
+  return string.format("|cffffffff%d|r%s", c, COPPER_ICON)
 end
 
 local function Duration(seconds)
