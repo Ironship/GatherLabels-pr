@@ -90,18 +90,44 @@ function ns.Category(name)
   return ns.db.learned[name]
 end
 
--- Retail nodes come in many forms ("Lush Mycobloom", "Rich Bismuth Deposit");
--- each counts as its plain name. Looked up once per name.
+-- Retail nodes come in many forms ("Lush Mycobloom", "Rich Bismuth Deposit"),
+-- and fishing pools can carry density prefixes ("Sparse Oily Blackmouth School")
+-- or "Pool" suffixes ("Waterlogged Wreckage Pool"). Looked up once per name.
+local FISH_PREFIXES = { "Lesser ", "Sparse ", "Abundant ", "Teeming " }
+local FISH_ALIASES = {
+  ["Thousandbite Pirahna Swarm"] = "Thousandbite Piranha Swarm",
+}
+
+local function CanonFishPool(name)
+  local candidate = FISH_ALIASES[name] or name
+  if ns.NODES[candidate] and ns.NODES[candidate].category == "fish" then return candidate end
+  for _, prefix in ipairs(FISH_PREFIXES) do
+    if candidate:sub(1, #prefix) == prefix then
+      candidate = candidate:sub(#prefix + 1)
+      break
+    end
+  end
+  candidate = FISH_ALIASES[candidate] or candidate
+  if ns.NODES[candidate] and ns.NODES[candidate].category == "fish" then return candidate end
+  if candidate:sub(-5) == " Pool" then
+    candidate = candidate:sub(1, -6)
+    candidate = FISH_ALIASES[candidate] or candidate
+    if ns.NODES[candidate] and ns.NODES[candidate].category == "fish" then return candidate end
+  end
+end
+
 local canon, canonCount = {}, 0
 function ns.Canon(name)
   if ns.NODES[name] or ns.db.learned[name] then return name end
   local base = canon[name]
   if base == nil then
-    base = false
-    for _, modern in ipairs(ns.MODERN) do
-      if name:find(modern, 1, true) then
-        base = modern
-        break
+    base = CanonFishPool(name) or false
+    if not base then
+      for _, modern in ipairs(ns.MODERN) do
+        if name:find(modern, 1, true) then
+          base = modern
+          break
+        end
       end
     end
     if canonCount > 500 then
@@ -138,6 +164,11 @@ end
 
 -- Expansion of the running game, so the settings list only nodes that exist.
 function ns.GameExpansion()
+  if ns.IS_FOREVER then return 0 end
+  local toc = GetBuildInfo and select(4, GetBuildInfo())
+  if type(toc) == "number" and toc >= 10000 then
+    return math.floor(toc / 10000) - 1
+  end
   if GetClientDisplayExpansionLevel then return GetClientDisplayExpansionLevel() end
   if GetExpansionLevel then return GetExpansionLevel() end
   return 0
@@ -149,8 +180,7 @@ function ns.NamesFor(category)
   local list, maxExp = {}, ns.GameExpansion()
   for _, name in ipairs(ns.NODE_LIST[category]) do
     local node = ns.NODES[name]
-    -- Retail-only nodes (item 0) stay out of Classic and WoW Forever lists.
-    if node.exp <= maxExp and (node.item > 0 or ns.IS_RETAIL) then list[#list + 1] = name end
+    if node.exp <= maxExp then list[#list + 1] = name end
   end
   local extra = {}
   for name, c in pairs(ns.db.learned) do
