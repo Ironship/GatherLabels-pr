@@ -72,12 +72,91 @@ local ORES = {
 -- Fishing pools show on the minimap with Find Fish; the item is the fish they
 -- give (0 = no single fish, the category's icon is used).
 local FISH = {
+  -- Classic (0)
   { "Floating Wreckage", 0 }, { "Floating Debris", 0 }, { "Oil Spill", 0 },
   { "Schooner Wreckage", 0 }, { "Waterlogged Wreckage", 0 }, { "Bloodsail Wreckage", 0 },
-  { "Muddy Churning Waters", 0 }, { "School of Deviate Fish", 6522 },
+  { "Muddy Churning Waters", 0 }, { "Muddy Churning Water", 0 },
+  { "Patch of Elemental Water", 7070 }, { "School of Deviate Fish", 6522 },
   { "Oily Blackmouth School", 6358 }, { "Firefin Snapper School", 6359 },
   { "Sagefish School", 21071 }, { "Greater Sagefish School", 21153 },
   { "Stonescale Eel Swarm", 13422 }, { "School of Tastyfish", 19807 },
+  -- Burning Crusade (1)
+  { "Highland Mixed School", 0, 1 }, { "Brackish Mixed School", 0, 1 },
+  { "Pure Water", 22578, 1 }, { "Steam Pump Flotsam", 0, 1 },
+  { "Bluefish School", 27437, 1 }, { "Feltail School", 27425, 1 },
+  { "Mudfish School", 27435, 1 }, { "School of Darter", 27438, 1 },
+  { "Sporefish School", 27429, 1 },
+  -- Wrath of the Lich King (2)
+  { "Borean Man O' War School", 41805, 2 }, { "Deep Sea Monsterbelly School", 41800, 2 },
+  { "Dragonfin Angelfish School", 41807, 2 }, { "Fangtooth Herring School", 41810, 2 },
+  { "Glacial Salmon School", 41809, 2 }, { "Glassfin Minnow School", 41814, 2 },
+  { "Imperial Manta Ray School", 41802, 2 }, { "Moonglow Cuttlefish School", 41801, 2 },
+  { "Musselback Sculpin School", 41806, 2 }, { "Nettlefish School", 41813, 2 },
+  { "Mixed Ocean School", 0, 2 }, { "Strange Pool", 0, 2 },
+  -- Cataclysm (3)
+  { "Albino Cavefish School", 53065, 3 }, { "Algaefin Rockfish School", 53071, 3 },
+  { "Blackbelly Mudfish School", 53066, 3 }, { "Deepsea Sagefish School", 53072, 3 },
+  { "Fathom Eel Swarm", 53070, 3 }, { "Highland Guppy School", 53064, 3 },
+  { "Mountain Trout School", 53063, 3 }, { "Pool of Fire", 52325, 3 },
+  { "Shipwreck Debris", 0, 3 },
+  -- Mists of Pandaria (4)
+  { "Emperor Salmon School", 74859, 4 }, { "Giant Mantis Shrimp Swarm", 74857, 4 },
+  { "Golden Carp School", 74866, 4 }, { "Jade Lungfish School", 74856, 4 },
+  { "Jewel Danio School", 74863, 4 }, { "Krasarang Paddlefish School", 74865, 4 },
+  { "Redbelly Mandarin School", 74860, 4 }, { "Reef Octopus Swarm", 74864, 4 },
+  { "Spinefish School", 83064, 4 }, { "Tiger Gourami School", 74861, 4 },
+  { "Floating Shipwreck Debris", 0, 4 },
+  -- Warlords of Draenor (5)
+  { "Abyssal Gulper School", 111664, 5 }, { "Oily Abyssal Gulper School", 111664, 5 },
+  { "Blackwater Whiptail School", 111663, 5 }, { "Blind Lake Sturgeon School", 111667, 5 },
+  { "Fat Sleeper School", 111668, 5 }, { "Fire Ammonite School", 111666, 5 },
+  { "Jawless Skulker School", 111669, 5 }, { "Sea Scorpion School", 111665, 5 },
+  { "Oily Sea Scorpion School", 111665, 5 }, { "Savage Piranha Pool", 118565, 5 },
+  { "Felmouth Frenzy School", 127991, 5 },
+  -- Legion (6)
+  { "Black Barracuda School", 124112, 6 }, { "Cursed Queenfish School", 124107, 6 },
+  { "Runescale Koi School", 124111, 6 }, { "Fever of Stormrays", 124110, 6 },
+  { "Highmountain Salmon School", 124109, 6 }, { "Mossgill Perch School", 124108, 6 },
+  -- Battle for Azeroth (7)
+  { "Frenzied Fangtooth School", 152545, 7 }, { "Great Sea Catfish School", 152547, 7 },
+  { "Lane Snapper School", 152546, 7 }, { "Rasboralus School", 0, 7 },
+  { "Redtail Loach School", 152549, 7 }, { "Sand Shifter School", 152543, 7 },
+  { "Slimy Mackerel School", 152544, 7 }, { "Tiragarde Perch School", 152548, 7 },
+  { "U'taka School", 0, 7 }, { "Mauve Stinger School", 168646, 7 },
+  { "Viper Fish School", 168302, 7 }, { "Ionized Minnows", 167562, 7 },
+  { "Sentry Fish School", 0, 7 },
+  -- Shadowlands (8)
+  { "Iridescent Amberjack School", 173033, 8 }, { "Pocked Bonefish School", 173035, 8 },
+  { "Silvergill Pike School", 173034, 8 }, { "Elysian Thade School", 173037, 8 },
+  { "Lost Sole School", 173032, 8 }, { "Spinefin Piranha School", 173036, 8 },
+  { "Precursor Placoderm School", 187702, 8 },
+  -- Dragonflight (9)
+  { "Islefin Dorado Pool", 194970, 9 }, { "Shimmering Treasure Pool", 0, 9 },
+  { "Temporal Dragonhead Pool", 194969, 9 }, { "Thousandbite Piranha Swarm", 194966, 9 },
+  { "Aileron Seamoth School", 194967, 9 }, { "Cerulean Spinefish School", 194968, 9 },
+  { "Rimefin Tuna Pool", 199345, 9 }, { "Magma Thresher Pool", 199344, 9 },
+  { "Prismatic Leaper School", 200061, 9 },
+  -- The War Within (10)
+  { "Calm Surfacing Ripple", 0, 10 }, { "River Bass Pool", 0, 10 },
+  { "Glimmerpool", 0, 10 }, { "Bloody Perch Swarm", 0, 10 },
+  { "Swarm of Slum Sharks", 0, 10 }, { "Blood in the Water", 0, 10 },
+  { "Festering Rotpool", 0, 10 }, { "Infused Ichor Spill", 0, 10 },
+  { "Stargazer Swarm", 0, 10 }, { "Anglerseeker Torrent", 0, 10 },
+  { "Royal Ripple", 0, 10 }, { "Shore Treasure", 0, 10 },
+  { "Floating Deep Treasure", 0, 10 },
+  -- Midnight (11)
+  { "Bloom Swarm", 0, 11 }, { "Blossoming Torrent", 0, 11 },
+  { "Bubbling Bloom", 0, 11 }, { "Hunter Surge", 0, 11 },
+  { "Lashing Waves", 0, 11 }, { "Obscured School", 0, 11 },
+  { "Salmon Pool", 0, 11 }, { "Song Swarm", 0, 11 },
+  { "Sunbath School", 0, 11 }, { "Sunwell Swarm", 0, 11 },
+  { "Surface Ripple", 0, 11 }, { "Careless Cargo", 0, 11 },
+  { "Lost Treasures", 0, 11 }, { "Viscous Void", 0, 11 },
+  { "Abyssal Swirl", 0, 11 }, { "Blighted Venom Pool", 0, 11 },
+  { "Bubbling Beryl", 0, 11 }, { "Cursed Oddity", 0, 11 },
+  { "Grisly Cod Pool", 0, 11 }, { "Torrential Gorgerswarm", 0, 11 },
+  { "Vile Venom", 0, 11 }, { "Viscous Venom", 0, 11 },
+  { "Willow Sea", 0, 11 },
 }
 
 -- Chests show on the minimap with Find Treasure (Dwarves) and can be learned
