@@ -79,16 +79,43 @@ local function NodeList(parent, category, width)
   return box
 end
 
-StaticPopupDialogs["GATHERLABELS_FORGET"] = {
-  text = "Forget every saved herb and ore spot, for all your characters?",
-  button1 = YES,
-  button2 = NO,
-  OnAccept = function() ns.ForgetAll() end,
-  timeout = 0,
-  whileDead = true,
-  hideOnEscape = true,
-  preferredIndex = 3,
-}
+local forgetConfirm
+local function ShowForgetConfirm()
+  if not forgetConfirm then
+    local ok, box = pcall(CreateFrame, "Frame", "GatherLabelsForgetConfirm", UIParent, "BackdropTemplate")
+    if not ok or not box then box = CreateFrame("Frame", "GatherLabelsForgetConfirm", UIParent) end
+    box:SetSize(340, 118)
+    box:SetPoint("CENTER", UIParent, "CENTER", 0, 40)
+    box:SetFrameStrata("FULLSCREEN_DIALOG")
+    box:SetToplevel(true)
+    box:SetClampedToScreen(true)
+    box:EnableMouse(true)
+    S.Plate(box)
+    if not box.SetBackdrop then
+      local bg = box:CreateTexture(nil, "BACKGROUND")
+      bg:SetAllPoints()
+      bg:SetColorTexture(0.06, 0.045, 0.03, 0.95)
+    end
+    local msg = S.Label(box, "Forget every saved herb and ore spot, for all your characters?", "GameFontHighlight")
+    msg:SetPoint("TOPLEFT", 16, -16)
+    msg:SetPoint("TOPRIGHT", -16, -16)
+    msg:SetJustifyH("CENTER")
+    msg:SetWordWrap(true)
+    local yes = S.Button(box, YES or "Yes", 90)
+    yes:SetPoint("BOTTOMRIGHT", box, "BOTTOM", -6, 14)
+    yes:SetScript("OnClick", function()
+      box:Hide()
+      ns.ForgetAll()
+    end)
+    local no = S.Button(box, NO or "No", 90)
+    no:SetPoint("BOTTOMLEFT", box, "BOTTOM", 6, 14)
+    no:SetScript("OnClick", function() box:Hide() end)
+    if S.CloseOnEscape then S.CloseOnEscape(box) end
+    box:Hide()
+    forgetConfirm = box
+  end
+  forgetConfirm:Show()
+end
 
 local TABS = {
   { label = "Settings" },
@@ -317,6 +344,9 @@ local function Build()
   frame = S.Window({ name = "GatherLabelsFrame", title = "Gather Labels",
     icon = "Interface\\Icons\\INV_Misc_Flower_02", width = 640, height = 560 })
   frame:SetScript("OnShow", function() SelectTab(frame.tab or 1) end)
+  frame:HookScript("OnHide", function()
+    if forgetConfirm then forgetConfirm:Hide() end
+  end)
   frame.topHelp = S.Help(frame.attic, "", 540)
   frame.topHelp:SetPoint("LEFT", 6, -2)
 
@@ -339,7 +369,7 @@ local function Build()
   local forget = S.Button(frame, "Forget all spots", 130, "Forget all spots",
     "Wipes every saved spot, for all your characters. Asks first.")
   forget:SetPoint("BOTTOMRIGHT", -8, 4)
-  forget:SetScript("OnClick", function() StaticPopup_Show("GATHERLABELS_FORGET") end)
+  forget:SetScript("OnClick", ShowForgetConfirm)
   frame.routeButton = S.Button(frame, "Start farming route", 150, "Farming route",
     "A loop through the saved spots in this zone, drawn on the minimap. The arrow leads you round it.")
   frame.routeButton:SetPoint("RIGHT", forget, "LEFT", -6, 0)
