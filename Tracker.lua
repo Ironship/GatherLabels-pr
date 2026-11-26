@@ -239,24 +239,26 @@ function ns.OnGathered(name, continent, x, y)
   Refresh()
 end
 
-local function CountLoot()
-  pcall(function()
-    for slot = 1, GetNumLootItems() do
-      local link = GetLootSlotLink(slot)
-      local id = type(link) == "string" and tonumber(link:match("item:(%d+)"))
-      if id then
-        local icon, name, quantity, _, quality = GetLootSlotInfo(slot)
-        local item = session.loot[id]
-        if not item then
-          item = { count = 0 }
-          session.loot[id] = item
-        end
-        item.count = item.count + (tonumber(quantity) or 1)
-        item.icon, item.name = icon or item.icon, name or item.name
-        item.quality = tonumber(quality) or item.quality
+local function CountLootInner()
+  for slot = 1, GetNumLootItems() do
+    local link = GetLootSlotLink(slot)
+    local id = type(link) == "string" and tonumber(link:match("item:(%d+)"))
+    if id then
+      local icon, name, quantity, _, quality = GetLootSlotInfo(slot)
+      local item = session.loot[id]
+      if not item then
+        item = { count = 0 }
+        session.loot[id] = item
       end
+      item.count = item.count + (tonumber(quantity) or 1)
+      item.icon, item.name = icon or item.icon, name or item.name
+      item.quality = tonumber(quality) or item.quality
     end
-  end)
+  end
+end
+
+local function CountLoot()
+  pcall(CountLootInner)
   lootVersion = lootVersion + 1
   Refresh()
 end
@@ -275,6 +277,10 @@ function ns.ResetSession()
   ns.Print("New gathering session started.")
 end
 
+local function ReadIsFishingLoot()
+  return IsFishingLoot and IsFishingLoot()
+end
+
 local events = CreateFrame("Frame")
 events:RegisterEvent("PLAYER_LOGIN")
 events:RegisterEvent("PLAYER_LOGOUT")
@@ -291,7 +297,7 @@ events:SetScript("OnEvent", function(_, event)
     runningSince = nil
   elseif event == "LOOT_OPENED" and session then
     -- Fish count too.
-    local ok, fishing = pcall(function() return IsFishingLoot and IsFishingLoot() end)
+    local ok, fishing = pcall(ReadIsFishingLoot)
     if ok and fishing then
       session.catches = session.catches + 1
       runningSince = runningSince or GetTime()

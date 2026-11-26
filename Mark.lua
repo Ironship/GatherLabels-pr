@@ -29,12 +29,16 @@ local function SamePoint(point)
   return math.abs(x - mine.x) < 0.0005 and math.abs(y - mine.y) < 0.0005
 end
 
+local function ClearCurrentWaypoint()
+  if C_Map.HasUserWaypoint() and SamePoint(C_Map.GetUserWaypoint()) then
+    C_Map.ClearUserWaypoint()
+  end
+end
+
 -- Take our marker down (the spot stays wanted).
 local function Clear()
   if not mine then return end
-  pcall(function()
-    if C_Map.HasUserWaypoint() and SamePoint(C_Map.GetUserWaypoint()) then C_Map.ClearUserWaypoint() end
-  end)
+  pcall(ClearCurrentWaypoint)
   mine = nil
 end
 
@@ -239,6 +243,16 @@ local function NavFrame()
   return navFrame
 end
 
+local function IsStillMineWaypoint()
+  return C_Map.HasUserWaypoint() and SamePoint(C_Map.GetUserWaypoint())
+end
+
+local function CheckNavVisible()
+  return C_SuperTrack.IsSuperTrackingUserWaypoint()
+    and C_Navigation.HasValidScreenPosition()
+    and not C_Navigation.WasClampedToScreen()
+end
+
 local watch = CreateFrame("Frame")
 watch:RegisterEvent("NAVIGATION_FRAME_CREATED")
 watch:RegisterEvent("NAVIGATION_FRAME_DESTROYED")
@@ -252,7 +266,7 @@ watch:SetScript("OnEvent", function(_, event)
     navFrame = nil
   elseif event == "USER_WAYPOINT_UPDATED" and mine then
     -- Someone else (you, or another addon) moved the map pin.
-    local ok, still = pcall(function() return C_Map.HasUserWaypoint() and SamePoint(C_Map.GetUserWaypoint()) end)
+    local ok, still = pcall(IsStillMineWaypoint)
     if ok and not still then
       mine = nil
       -- Leave their pin alone; ours comes back once theirs is gone.
@@ -290,11 +304,8 @@ watch:SetScript("OnUpdate", function(_, elapsed)
   local show = false
   local nav = mine and NavFrame()
   if nav then
-    pcall(function()
-      show = C_SuperTrack.IsSuperTrackingUserWaypoint()
-        and C_Navigation.HasValidScreenPosition()
-        and not C_Navigation.WasClampedToScreen()
-    end)
+    local ok, vis = pcall(CheckNavVisible)
+    if ok then show = vis end
   end
   local onPool = false
   if show then
@@ -390,6 +401,7 @@ local function Nearby(continent, px, py)
     end
   else
     local radius, cell = math.min(ns.MinimapRadius(), Range()), ns.CELL
+    local r2 = radius * radius
     local cells = ns.db.spots[continent]
     if cells then
       for i = math.floor((px - radius) / cell), math.floor((px + radius) / cell) do
@@ -398,7 +410,7 @@ local function Nearby(continent, px, py)
           if spots then
             for _, spot in ipairs(spots) do
               local name = ns.ShownName(spot)
-              if name and Wanted(name) and (spot.x - px) ^ 2 + (spot.y - py) ^ 2 <= radius * radius then
+              if name and Wanted(name) and (spot.x - px) ^ 2 + (spot.y - py) ^ 2 <= r2 then
                 n = Add(n + 1, spot.x, spot.y, name)
               end
             end
@@ -418,14 +430,35 @@ local function StopAuto()
   end
 end
 
+local lastAutoContinent, lastAutoX, lastAutoY, lastAutoRange, lastAutoScans, lastAutoRadius, lastAutoPoolGlow, lastAutoScanning
+local autoDirty = true
+
 local function UpdateAuto()
   local db = ns.db
   if not db or not (db.autoShine or PoolGlow()) or not db.worldMark or (ns.TargetName and ns.TargetName()) then
     if auto and ns.TargetName and ns.TargetName() then auto = nil else StopAuto() end
+    lastAutoContinent = nil
     return
   end
   local continent, px, py = ns.PlayerWorldPos()
-  if not continent then StopAuto() return end
+  if not continent then
+    StopAuto()
+    lastAutoContinent = nil
+    return
+  end
+  local range = Range()
+  local scans = ns.liveScans
+  local minimapRadius = ns.MinimapRadius()
+  local poolGlow = PoolGlow()
+  local scanning = ns.ScannerRunning and ns.ScannerRunning() or false
+  if not autoDirty and lastAutoContinent == continent and lastAutoRange == range and lastAutoScans == scans
+      and lastAutoRadius == minimapRadius and lastAutoPoolGlow == poolGlow and lastAutoScanning == scanning
+      and (not auto or want) and lastAutoX and (lastAutoX - px) ^ 2 + (lastAutoY - py) ^ 2 < 1 then
+    return
+  end
+  autoDirty = false
+  lastAutoContinent, lastAutoX, lastAutoY, lastAutoRange, lastAutoScans, lastAutoRadius, lastAutoPoolGlow, lastAutoScanning =
+    continent, px, py, range, scans, minimapRadius, poolGlow, scanning
   local best, bestDist, current
   for _, node in ipairs(Nearby(continent, px, py)) do
     local d = (node.x - px) ^ 2 + (node.y - py) ^ 2
@@ -460,6 +493,7 @@ end)
 
 function ns.ShineChanged()
   autoWait = 0
+  autoDirty = true
   if not ns.db.autoShine and not PoolGlow() then StopAuto() end
 end
 

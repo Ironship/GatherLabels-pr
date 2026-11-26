@@ -212,5 +212,6 @@ function ns.RefreshPins()
 end
 ns.OnSpotsChanged = function()
   ns.RefreshPins()
+  if ns.ShineChanged then ns.ShineChanged() end
   if ns.OnSettingsChanged then ns.OnSettingsChanged() end
 end

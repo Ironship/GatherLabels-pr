@@ -746,8 +746,12 @@ local function RestoreIcon()
   dimmed = nil
 end
 
+local function ReadGameIcon(plate)
+  return plate.UnitFrame.SoftTargetFrame.Icon
+end
+
 local function GameIcon(plate)
-  local ok, icon = pcall(function() return plate.UnitFrame.SoftTargetFrame.Icon end)
+  local ok, icon = pcall(ReadGameIcon, plate)
   if ok and type(icon) == "table" and icon.SetAlpha then return icon end
 end
 
@@ -928,6 +932,7 @@ end
 local function Hide()
   RestoreIcon()
   target.plate, target.state = nil, nil
+  glow._alpha = nil
   glow:Hide()
 end
 
@@ -951,7 +956,11 @@ local function Show(plate, state)
     end
   end
   Tint(state == "locked" and GREY or COLOR[target.kind] or COLOR.herb)
-  glow:SetAlpha((STATE_ALPHA[state] or 1) * (tonumber(db.glowBright) or 85) / 100)
+  local alpha = (STATE_ALPHA[state] or 1) * (tonumber(db.glowBright) or 85) / 100
+  if glow._alpha ~= alpha then
+    glow:SetAlpha(alpha)
+    glow._alpha = alpha
+  end
   if fresh then
     Look()
     SetLabel()
@@ -1130,6 +1139,10 @@ end
 -- Events
 ------------------------------------------------------------------------
 
+local function ReadPlateUnitToken(plate)
+  return plate.namePlateUnitToken
+end
+
 local events = CreateFrame("Frame")
 events:RegisterEvent("PLAYER_ENTERING_WORLD")
 events:RegisterEvent("PLAYER_LOGOUT")
@@ -1150,8 +1163,8 @@ events:SetScript("OnEvent", function(_, event, a, b)
   elseif event == "NAME_PLATE_UNIT_REMOVED" then
     -- That plate may be handed to something else now.
     if target.plate and not preview then
-      local ok, gone = pcall(function() return target.plate.namePlateUnitToken == a end)
-      if not ok or gone then
+      local ok, token = pcall(ReadPlateUnitToken, target.plate)
+      if not ok or token == a then
         Hide()
         Refresh()
       end
