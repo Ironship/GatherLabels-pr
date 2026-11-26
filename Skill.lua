@@ -76,12 +76,13 @@ function ns.SkillInfo(name)
   local node = ns.NODES[name]
   if not node or not node.skill or ns.IS_RETAIL then return end
   local need, have = node.skill, ns.SkillRank(node.category)
+  local base = need == 1 and 0 or need
   local color
   if not have then color = "ffffff"
   elseif have < need then color = "ff2020"
-  elseif have < need + 25 then color = "ff8040"
-  elseif have < need + 50 then color = "ffff00"
-  elseif have < need + 100 then color = "40c040"
+  elseif have < base + 25 then color = "ff8040"
+  elseif have < base + 50 then color = "ffff00"
+  elseif have < base + 100 then color = "40c040"
   else color = "808080" end
   return need, have, color, SKILL_NAME[node.category]
 end
@@ -96,14 +97,20 @@ function ns.SkillText(name)
 end
 
 function ns.TooLow(name)
-  if not ns.db.hideAbove then return false end
+  if not (ns.db and ns.db.hideAbove) then return false end
   local need, have = ns.SkillInfo(name)
   return need ~= nil and have ~= nil and have < need
 end
 
+function ns.IsGrey(name)
+  if not (ns.db and ns.db.hideGrey) then return false end
+  local need, have, color = ns.SkillInfo(name)
+  return need ~= nil and have ~= nil and color == "808080"
+end
+
 -- Ticked in Settings and not hidden for your skill.
 function ns.IsDrawn(name)
-  return ns.IsShownName(name) and not ns.TooLow(name)
+  return ns.IsShownName(name) and not ns.TooLow(name) and not ns.IsGrey(name)
 end
 
 local events = CreateFrame("Frame")
@@ -111,6 +118,8 @@ events:RegisterEvent("SKILL_LINES_CHANGED")
 events:SetScript("OnEvent", function()
   cacheTime = 0
   if ns.RefreshPins then ns.RefreshPins() end
+  if ns.ShineChanged then ns.ShineChanged() end
+  if ns.OnSettingsChanged then ns.OnSettingsChanged() end
 end)
 
 -- Hovering a node in the world: add the skill line under its name.

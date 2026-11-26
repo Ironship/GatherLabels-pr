@@ -20,6 +20,7 @@ local DEFAULTS = {
   scanDetail = 2,     -- 1 lightest .. 3 most exact
   showSaved = false,  -- WoW Forever: also show saved spots with no dot now
   hideAbove = false,  -- hide nodes your gathering skill is too low for
+  hideGrey = false,   -- hide nodes that no longer give skill-ups (grey)
   tracker = true,     -- show the gathering session panel
   worldMark = true,   -- sparkle in the world on the node the arrow points to
   autoShine = false,  -- sparkle the nearest node in range by itself
@@ -479,7 +480,7 @@ function ns.Set(key, value)
   if ns.RefreshPins then ns.RefreshPins() end
   if key == "tracker" and ns.TrackerSettingsChanged then ns.TrackerSettingsChanged() end
   if key == "worldMark" and ns.WorldMarkChanged then ns.WorldMarkChanged() end
-  if (key == "autoShine" or key == "worldMark" or key == "shineRange") and ns.ShineChanged then ns.ShineChanged() end
+  if (key == "autoShine" or key == "worldMark" or key == "shineRange" or key == "hideAbove" or key == "hideGrey") and ns.ShineChanged then ns.ShineChanged() end
   if (key == "shineRange" or key == "shineAnim") and ns.SparkleChanged then ns.SparkleChanged() end
   if key:find("^glow") and ns.GlowChanged then ns.GlowChanged(key) end
 end
@@ -488,12 +489,14 @@ function ns.SetNameShown(name, on)
   ns.db.hidden[name] = (not on) or nil
   if ns.OnSettingsChanged then ns.OnSettingsChanged() end
   if ns.RefreshPins then ns.RefreshPins() end
+  if ns.ShineChanged then ns.ShineChanged() end
 end
 
 function ns.SetCategoryShown(category, on)
   for _, name in ipairs(ns.NamesFor(category)) do ns.db.hidden[name] = (not on) or nil end
   if ns.OnSettingsChanged then ns.OnSettingsChanged() end
   if ns.RefreshPins then ns.RefreshPins() end
+  if ns.ShineChanged then ns.ShineChanged() end
 end
 
 SLASH_GATHERLABELS1 = "/glabels"
