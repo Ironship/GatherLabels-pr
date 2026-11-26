@@ -2,7 +2,7 @@
 
 World of Warcraft addon by SlimyTaco. Shows each herb, ore, fishing pool and treasure chest on the minimap with its own icon and name, points an arrow to the node you click and makes it sparkle in the world. Works on WoW Forever and Retail.
 
-Download: [CurseForge](https://www.curseforge.com/wow/addons/gather-labels)
+Download: [CurseForge](https://www.curseforge.com/projects/1787326)
 
 Full description and settings: see `README.txt`.
 
