@@ -7,8 +7,21 @@ local _, ns = ...
 -- Newer expansions (Retail) are listed by the name of what they give: in the
 -- world they come as "Rich ...", "Lush ...", "... Deposit" and so on, and all
 -- of those count as the one name. Their icon is learned from your first loot.
--- Nodes not listed at all (WoW Forever additions) are learned the first time
--- you gather them.
+-- Nodes not listed at all are learned the first time you gather them;
+-- WoW Forever additions below are gated by ns.IS_FOREVER.
+
+local function IsForeverClient()
+  if not GetBuildInfo then return false end
+  local ok, version, _, _, toc = pcall(GetBuildInfo)
+  if not ok then return false end
+  if type(toc) == "number" and toc >= 16000 and toc < 17000 then return true end
+  if type(version) == "string" then
+    local major, minor = version:match("^(%d+)%.(%d+)")
+    if tonumber(major) == 1 and (tonumber(minor) or 0) >= 60 then return true end
+  end
+  return false
+end
+ns.IS_FOREVER = IsForeverClient()
 
 ns.CATEGORIES = {
   { key = "herb", label = "Herbs", fallbackIcon = "Interface\\Icons\\INV_Misc_Flower_02" },
@@ -47,6 +60,7 @@ local ORES = {
   { "Ooze Covered Silver Vein", 2775 }, { "Ooze Covered Gold Vein", 2776 },
   { "Ooze Covered Mithril Deposit", 3858 }, { "Ooze Covered Truesilver Deposit", 7911 },
   { "Ooze Covered Thorium Vein", 10620 }, { "Ooze Covered Rich Thorium Vein", 10620 },
+  { "Small Obsidian Chunk", 11370 }, { "Large Obsidian Chunk", 11370 },
   { "Fel Iron Deposit", 23424, 1 }, { "Adamantite Deposit", 23425, 1 },
   { "Rich Adamantite Deposit", 23425, 1 }, { "Khorium Vein", 23426, 1 },
   { "Nethercite Deposit", 32464, 1 },
@@ -72,11 +86,33 @@ local TREASURE = {
   { "Battered Chest", 0 }, { "Tattered Chest", 0 }, { "Solid Chest", 0 },
   { "Large Battered Chest", 0 }, { "Large Solid Chest", 0 }, { "Large Iron Bound Chest", 0 },
   { "Large Mithril Bound Chest", 0 }, { "Mithril Bound Chest", 0 },
+  { "Dented Chest", 0 }, { "Alliance Strongbox", 0 },
+  { "Practice Lockbox", 0 }, { "Buccaneer's Strongbox", 0 },
+  { "Battered Footlocker", 0 }, { "Waterlogged Footlocker", 0 },
+  { "Dented Footlocker", 0 }, { "Mossy Footlocker", 0 },
+  { "Scarlet Footlocker", 0 }, { "Un'Goro Dirt Pile", 0 }, { "Giant Clam", 0 },
+}
+
+-- WoW Forever custom nodes (registered only when running on a Forever client).
+local FOREVER_HERBS = {
+  { "Stunted Silverleaf", 765 }, { "Wilted Peacebloom", 2447 }, { "Nightmare Moss", 3369 },
+  { "Dreamroot", 2449 }, { "Moonroot", 13463 }, { "Star Lotus", 13468 },
+  { "Hyjal Silphium", 2447 }, { "Tomb Weed", 3369 }, { "Demonsage", 13465 },
+}
+local FOREVER_ORES = {
+  { "Weak Copper Vein", 2770 }, { "Poor Copper Vein", 2770 },
+  { "Chunk of Amber", 2770 }, { "Large Chunk of Amber", 2770 },
+  { "Cold Iron Deposit", 2772 }, { "Fool's Gold Vein", 2776 },
+  { "Starsilver Vein", 7911 }, { "Greater Moonstone Formation", 2775 },
+  { "Heavy Thorium Vein", 10620 },
 }
 
 -- Herbalism or Mining skill needed to gather each node.
 local SKILL = {
   ["Peacebloom"] = 1, ["Silverleaf"] = 1, ["Earthroot"] = 15, ["Mageroyal"] = 50,
+  ["Stunted Silverleaf"] = 1, ["Wilted Peacebloom"] = 1, ["Nightmare Moss"] = 125,
+  ["Dreamroot"] = 205, ["Moonroot"] = 250, ["Star Lotus"] = 250,
+  ["Hyjal Silphium"] = 1, ["Tomb Weed"] = 1, ["Demonsage"] = 300,
   ["Briarthorn"] = 70, ["Stranglekelp"] = 85, ["Bruiseweed"] = 100, ["Wild Steelbloom"] = 115,
   ["Grave Moss"] = 120, ["Kingsblood"] = 125, ["Liferoot"] = 150, ["Fadeleaf"] = 160,
   ["Goldthorn"] = 170, ["Khadgar's Whisker"] = 185, ["Wintersbite"] = 195, ["Firebloom"] = 205,
@@ -90,6 +126,10 @@ local SKILL = {
   ["Lichbloom"] = 425, ["Icethorn"] = 435, ["Frost Lotus"] = 450,
 
   ["Copper Vein"] = 1, ["Tin Vein"] = 65, ["Incendicite Mineral Vein"] = 65, ["Silver Vein"] = 75,
+  ["Weak Copper Vein"] = 1, ["Poor Copper Vein"] = 1, ["Chunk of Amber"] = 1, ["Large Chunk of Amber"] = 1,
+  ["Cold Iron Deposit"] = 125, ["Fool's Gold Vein"] = 175, ["Starsilver Vein"] = 245,
+  ["Greater Moonstone Formation"] = 245, ["Heavy Thorium Vein"] = 300,
+  ["Small Obsidian Chunk"] = 305, ["Large Obsidian Chunk"] = 305,
   ["Ooze Covered Silver Vein"] = 75, ["Lesser Bloodstone Deposit"] = 75, ["Iron Deposit"] = 125,
   ["Indurium Mineral Vein"] = 150, ["Gold Vein"] = 155, ["Ooze Covered Gold Vein"] = 155,
   ["Mithril Deposit"] = 175, ["Ooze Covered Mithril Deposit"] = 175, ["Truesilver Deposit"] = 230,
@@ -137,6 +177,15 @@ for category, list in pairs({ herb = HERBS, ore = ORES, fish = FISH, treasure = 
   for _, entry in ipairs(list) do
     ns.NODES[entry[1]] = { category = category, item = entry[2], exp = entry[3] or 0, skill = SKILL[entry[1]] }
     table.insert(ns.NODE_LIST[category], entry[1])
+  end
+end
+
+if ns.IS_FOREVER then
+  for category, list in pairs({ herb = FOREVER_HERBS, ore = FOREVER_ORES }) do
+    for _, entry in ipairs(list) do
+      ns.NODES[entry[1]] = { category = category, item = entry[2], exp = 0, skill = SKILL[entry[1]], forever = true }
+      table.insert(ns.NODE_LIST[category], entry[1])
+    end
   end
 end
 
