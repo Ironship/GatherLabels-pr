@@ -138,6 +138,8 @@ local function BuildSettingsPage(page)
     function(on) ns.Set("scan", on) end, "Names every dot straight off the minimap, no hovering needed. WoW Forever only.")
   page.savedCheck = S.Check(page, "Also show saved spots with no dot", nil,
     function(on) ns.Set("showSaved", on) end, "Spots you've found before show faded while nothing has spawned there.")
+  page.ringModeCheck = S.Check(page, "Hollow rings for saved spots", nil,
+    function(on) ns.Set("ringMode", on) end, "Draws hollow rings instead of filled icons on saved spots so live yellow tracking dots stay visible inside.")
   page.hideAboveCheck = S.Check(page, "Hide nodes my skill is too low for", nil,
     function(on) ns.Set("hideAbove", on) end)
   page.hideGreyCheck = S.Check(page, "Hide grey nodes (no skill-ups)", nil,
@@ -153,9 +155,9 @@ local function BuildSettingsPage(page)
   page.hideAboveCheck:SetShown(ns.SkillApplies())
   page.hideGreyCheck:SetShown(ns.SkillApplies())
   local y = S.Stack({ page.enabledCheck, page.labelsCheck, page.hoverCheck, page.scanCheck,
-    page.savedCheck, page.hideAboveCheck, page.hideGreyCheck, page.minimapCheck }, 0, -20)
+    page.savedCheck, page.ringModeCheck, page.hideAboveCheck, page.hideGreyCheck, page.minimapCheck }, 0, -20)
 
-  y = y - 10
+  y = y - 6
   S.Header(page, "While gathering", 0, y, W)
   page.trackerCheck = S.Check(page, "Show the session tracker", nil,
     function(on) ns.Set("tracker", on) end, "A small panel with time, nodes, loot and what it's worth.")
@@ -396,6 +398,7 @@ function ns.OnSettingsChanged()
   page.detail:SetShown(ns.ScannerAvailable())
   page.scanCheck:SetChecked(db.scan)
   page.savedCheck:SetChecked(db.showSaved)
+  page.ringModeCheck:SetChecked(db.ringMode)
   page.hideAboveCheck:SetChecked(db.hideAbove)
   page.hideGreyCheck:SetChecked(db.hideGrey)
   page.markCheck:SetChecked(db.worldMark)

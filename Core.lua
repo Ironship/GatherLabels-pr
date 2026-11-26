@@ -19,6 +19,7 @@ local DEFAULTS = {
   scan = true,        -- WoW Forever: read the dots off the minimap
   scanDetail = 2,     -- 1 lightest .. 3 most exact
   showSaved = false,  -- WoW Forever: also show saved spots with no dot now
+  ringMode = false,   -- draw hollow rings on saved spots so tracking dots stay visible inside
   hideAbove = false,  -- hide nodes your gathering skill is too low for
   hideGrey = false,   -- hide nodes that no longer give skill-ups (grey)
   tracker = true,     -- show the gathering session panel
