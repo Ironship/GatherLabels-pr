@@ -16,19 +16,19 @@ ns.ZONE_DATA = {
   [1413] = {
     herbs = { "Peacebloom", "Silverleaf", "Earthroot", "Mageroyal", "Briarthorn", "Stranglekelp", "Bruiseweed", "Wild Steelbloom", "Grave Moss", "Kingsblood" },
     ores = { "Copper Vein", "Tin Vein", "Silver Vein" },
-    pools = { "Floating Debris", "Oily Blackmouth School", "Sagefish School" },
+    pools = { "Floating Debris", "Oily Blackmouth School", "Sagefish School", "School of Deviate Fish" },
     fish = { { "Deviate Fish", 6522 }, { "Firefin Snapper", 6359 }, { "Oily Blackmouth", 6358 }, { "Raw Brilliant Smallfish", 6291 }, { "Raw Bristle Whisker Catfish", 6308 }, { "Raw Longjaw Mud Snapper", 6289 }, { "Raw Rainbow Fin Albacore", 6361 }, { "Raw Rockscale Cod", 6362 }, { "Raw Slitherskin Mackerel", 6303 }, { "Raw Spotted Yellowtail", 4603 } },
   },
   [1416] = {
     herbs = { "Stranglekelp", "Bruiseweed", "Wild Steelbloom", "Grave Moss", "Kingsblood", "Liferoot", "Fadeleaf", "Goldthorn", "Khadgar's Whisker", "Wintersbite" },
     ores = { "Copper Vein", "Tin Vein", "Silver Vein", "Iron Deposit", "Gold Vein", "Mithril Deposit", "Truesilver Deposit" },
-    pools = { "Floating Wreckage" },
+    pools = { "Floating Wreckage", "Greater Sagefish School" },
     fish = { { "Raw Bristle Whisker Catfish", 6308 }, { "Raw Greater Sagefish", 21153 }, { "Raw Mithril Head Trout", 8365 }, { "Raw Redgill", 13758 }, { "Raw Sunscale Salmon", 13760 } },
   },
   [1417] = {
     herbs = { "Stranglekelp", "Bruiseweed", "Wild Steelbloom", "Grave Moss", "Kingsblood", "Liferoot", "Fadeleaf", "Goldthorn", "Khadgar's Whisker" },
     ores = { "Tin Vein", "Lesser Bloodstone Deposit", "Silver Vein", "Iron Deposit", "Gold Vein", "Mithril Deposit", "Truesilver Deposit" },
-    pools = { "Floating Wreckage" },
+    pools = { "Floating Wreckage", "Waterlogged Wreckage", "Oily Blackmouth School", "Firefin Snapper School" },
     fish = { { "Firefin Snapper", 6359 }, { "Oily Blackmouth", 6358 }, { "Raw Bristle Whisker Catfish", 6308 }, { "Raw Mithril Head Trout", 8365 }, { "Raw Rockscale Cod", 6362 }, { "Raw Spotted Yellowtail", 4603 } },
   },
   [1418] = {
@@ -54,22 +54,25 @@ ns.ZONE_DATA = {
   [1422] = {
     herbs = { "Arthas' Tears", "Sungrass", "Dreamfoil", "Mountain Silversage", "Plaguebloom" },
     ores = { "Gold Vein", "Mithril Deposit", "Truesilver Deposit", "Small Thorium Vein", "Rich Thorium Vein" },
+    pools = { "Greater Sagefish School" },
     fish = { { "Deviate Fish", 6522 }, { "Lightning Eel", 13757 }, { "Oily Blackmouth", 6358 }, { "Raw Mithril Head Trout", 8365 }, { "Raw Nightfin Snapper", 13759 }, { "Raw Redgill", 13758 }, { "Raw Sunscale Salmon", 13760 }, { "Raw Whitescale Salmon", 13889 } },
   },
   [1423] = {
     herbs = { "Grave Moss", "Arthas' Tears", "Sungrass", "Golden Sansam", "Dreamfoil", "Mountain Silversage", "Plaguebloom", "Black Lotus" },
     ores = { "Gold Vein", "Mithril Deposit", "Truesilver Deposit", "Small Thorium Vein", "Rich Thorium Vein" },
+    pools = { "Greater Sagefish School" },
     fish = { { "Darkclaw Lobster", 13888 }, { "Large Raw Mightfish", 13893 }, { "Lightning Eel", 13757 }, { "Oily Blackmouth", 6358 }, { "Raw Mithril Head Trout", 8365 }, { "Raw Nightfin Snapper", 13759 }, { "Raw Redgill", 13758 }, { "Raw Spotted Yellowtail", 4603 }, { "Raw Summer Bass", 13756 }, { "Raw Sunscale Salmon", 13760 }, { "Raw Whitescale Salmon", 13889 }, { "Stonescale Eel", 13422 } },
   },
   [1424] = {
     herbs = { "Mageroyal", "Briarthorn", "Stranglekelp", "Bruiseweed", "Wild Steelbloom", "Kingsblood", "Liferoot", "Khadgar's Whisker" },
     ores = { "Copper Vein", "Tin Vein", "Silver Vein", "Iron Deposit", "Gold Vein", "Mithril Deposit", "Truesilver Deposit" },
-    pools = { "Floating Wreckage", "Oily Blackmouth School", "Sagefish School" },
+    pools = { "Floating Wreckage", "Schooner Wreckage", "Oily Blackmouth School", "Firefin Snapper School", "Sagefish School" },
     fish = { { "Firefin Snapper", 6359 }, { "Oily Blackmouth", 6358 }, { "Raw Bristle Whisker Catfish", 6308 }, { "Raw Longjaw Mud Snapper", 6289 }, { "Raw Mithril Head Trout", 8365 }, { "Raw Rainbow Fin Albacore", 6361 }, { "Raw Sagefish", 21071 } },
   },
   [1425] = {
     herbs = { "Stranglekelp", "Liferoot", "Fadeleaf", "Goldthorn", "Khadgar's Whisker", "Purple Lotus", "Sungrass", "Ghost Mushroom", "Star Lotus", "Golden Sansam" },
     ores = { "Silver Vein", "Iron Deposit", "Gold Vein", "Mithril Deposit", "Truesilver Deposit", "Small Thorium Vein", "Starsilver Vein" },
+    pools = { "Floating Wreckage", "Greater Sagefish School" },
     fish = { { "Firefin Snapper", 6359 }, { "Lightning Eel", 13757 }, { "Oily Blackmouth", 6358 }, { "Raw Glossy Mightfish", 13754 }, { "Raw Mithril Head Trout", 8365 }, { "Raw Nightfin Snapper", 13759 }, { "Raw Redgill", 13758 }, { "Raw Rockscale Cod", 6362 }, { "Raw Spotted Yellowtail", 4603 }, { "Raw Summer Bass", 13756 }, { "Raw Sunscale Salmon", 13760 }, { "Raw Winter Squid", 13755 }, { "Stonescale Eel", 13422 } },
   },
   [1426] = {
@@ -113,7 +116,7 @@ ns.ZONE_DATA = {
   [1434] = {
     herbs = { "Stranglekelp", "Wild Steelbloom", "Kingsblood", "Liferoot", "Fadeleaf", "Goldthorn", "Khadgar's Whisker", "Purple Lotus" },
     ores = { "Tin Vein", "Silver Vein", "Iron Deposit", "Gold Vein", "Mithril Deposit", "Truesilver Deposit" },
-    pools = { "Floating Wreckage", "Oily Blackmouth School" },
+    pools = { "Floating Wreckage", "Waterlogged Wreckage", "Bloodsail Wreckage", "Oily Blackmouth School", "Firefin Snapper School", "Greater Sagefish School", "Stonescale Eel Swarm", "School of Tastyfish" },
     fish = { { "Firefin Snapper", 6359 }, { "Lightning Eel", 13757 }, { "Oily Blackmouth", 6358 }, { "Raw Bristle Whisker Catfish", 6308 }, { "Raw Glossy Mightfish", 13754 }, { "Raw Greater Sagefish", 21153 }, { "Raw Mithril Head Trout", 8365 }, { "Raw Nightfin Snapper", 13759 }, { "Raw Redgill", 13758 }, { "Raw Rockscale Cod", 6362 }, { "Raw Spotted Yellowtail", 4603 }, { "Raw Summer Bass", 13756 }, { "Raw Sunscale Salmon", 13760 }, { "Raw Whitescale Salmon", 13889 }, { "Raw Winter Squid", 13755 }, { "Stonescale Eel", 13422 } },
   },
   [1435] = {
@@ -130,7 +133,7 @@ ns.ZONE_DATA = {
   [1437] = {
     herbs = { "Mageroyal", "Briarthorn", "Stranglekelp", "Bruiseweed", "Wild Steelbloom", "Grave Moss", "Kingsblood", "Liferoot" },
     ores = { "Copper Vein", "Incendicite Mineral Vein", "Tin Vein", "Silver Vein", "Iron Deposit", "Gold Vein" },
-    pools = { "Floating Wreckage", "Oily Blackmouth School" },
+    pools = { "Floating Wreckage", "Schooner Wreckage", "Oily Blackmouth School", "Firefin Snapper School" },
     fish = { { "Firefin Snapper", 6359 }, { "Oily Blackmouth", 6358 }, { "Raw Bristle Whisker Catfish", 6308 }, { "Raw Longjaw Mud Snapper", 6289 }, { "Raw Rainbow Fin Albacore", 6361 } },
   },
   [1438] = {
@@ -164,31 +167,31 @@ ns.ZONE_DATA = {
   [1443] = {
     herbs = { "Stranglekelp", "Bruiseweed", "Wild Steelbloom", "Grave Moss", "Kingsblood", "Liferoot", "Ghost Mushroom", "Gromsblood" },
     ores = { "Copper Vein", "Tin Vein", "Silver Vein", "Iron Deposit", "Gold Vein", "Mithril Deposit", "Truesilver Deposit" },
-    pools = { "Floating Wreckage", "Oily Blackmouth School" },
+    pools = { "Floating Wreckage", "Oily Blackmouth School", "Firefin Snapper School" },
     fish = { { "Firefin Snapper", 6359 }, { "Lightning Eel", 13757 }, { "Oily Blackmouth", 6358 }, { "Raw Bristle Whisker Catfish", 6308 }, { "Raw Mithril Head Trout", 8365 }, { "Raw Nightfin Snapper", 13759 }, { "Raw Redgill", 13758 }, { "Raw Rockscale Cod", 6362 }, { "Raw Spotted Yellowtail", 4603 }, { "Raw Sunscale Salmon", 13760 } },
   },
   [1444] = {
     herbs = { "Stranglekelp", "Liferoot", "Goldthorn", "Khadgar's Whisker", "Purple Lotus", "Sungrass", "Moonroot", "Golden Sansam" },
     ores = { "Silver Vein", "Iron Deposit", "Gold Vein", "Mithril Deposit", "Truesilver Deposit", "Greater Moonstone Formation", "Small Thorium Vein" },
-    pools = { "Floating Wreckage", "Oily Blackmouth School" },
+    pools = { "Floating Wreckage", "Oily Blackmouth School", "Firefin Snapper School", "Greater Sagefish School", "Stonescale Eel Swarm" },
     fish = { { "Firefin Snapper", 6359 }, { "Lightning Eel", 13757 }, { "Oily Blackmouth", 6358 }, { "Raw Glossy Mightfish", 13754 }, { "Raw Mithril Head Trout", 8365 }, { "Raw Nightfin Snapper", 13759 }, { "Raw Redgill", 13758 }, { "Raw Rockscale Cod", 6362 }, { "Raw Spotted Yellowtail", 4603 }, { "Raw Summer Bass", 13756 }, { "Raw Sunscale Salmon", 13760 }, { "Raw Whitescale Salmon", 13889 }, { "Raw Winter Squid", 13755 }, { "Stonescale Eel", 13422 } },
   },
   [1445] = {
     herbs = { "Stranglekelp", "Kingsblood", "Liferoot", "Fadeleaf", "Goldthorn", "Khadgar's Whisker" },
     ores = { "Tin Vein", "Silver Vein", "Iron Deposit", "Gold Vein", "Mithril Deposit", "Truesilver Deposit" },
-    pools = { "Floating Wreckage", "Oily Blackmouth School" },
+    pools = { "Floating Wreckage", "Waterlogged Wreckage", "Oily Blackmouth School", "Firefin Snapper School", "Greater Sagefish School" },
     fish = { { "Deviate Fish", 6522 }, { "Firefin Snapper", 6359 }, { "Lightning Eel", 13757 }, { "Oily Blackmouth", 6358 }, { "Raw Bristle Whisker Catfish", 6308 }, { "Raw Mithril Head Trout", 8365 }, { "Raw Nightfin Snapper", 13759 }, { "Raw Rainbow Fin Albacore", 6361 }, { "Raw Rockscale Cod", 6362 }, { "Raw Slitherskin Mackerel", 6303 }, { "Raw Spotted Yellowtail", 4603 }, { "Raw Sunscale Salmon", 13760 }, { "Raw Whitescale Salmon", 13889 } },
   },
   [1446] = {
     herbs = { "Stranglekelp", "Firebloom", "Purple Lotus" },
     ores = { "Silver Vein", "Iron Deposit", "Gold Vein", "Mithril Deposit", "Truesilver Deposit", "Small Thorium Vein" },
-    pools = { "Floating Wreckage", "Oily Blackmouth School" },
+    pools = { "Floating Wreckage", "Oily Blackmouth School", "Firefin Snapper School", "Stonescale Eel Swarm" },
     fish = { { "Deviate Fish", 6522 }, { "Firefin Snapper", 6359 }, { "Oily Blackmouth", 6358 }, { "Raw Brilliant Smallfish", 6291 }, { "Raw Glossy Mightfish", 13754 }, { "Raw Redgill", 13758 }, { "Raw Rockscale Cod", 6362 }, { "Raw Spotted Yellowtail", 4603 }, { "Raw Summer Bass", 13756 }, { "Raw Sunscale Salmon", 13760 }, { "Raw Winter Squid", 13755 }, { "Stonescale Eel", 13422 } },
   },
   [1447] = {
     herbs = { "Stranglekelp", "Goldthorn", "Khadgar's Whisker", "Purple Lotus", "Sungrass", "Golden Sansam", "Dreamfoil", "Mountain Silversage" },
     ores = { "Gold Vein", "Mithril Deposit", "Truesilver Deposit", "Rich Thorium Vein" },
-    pools = { "Floating Wreckage", "Oily Blackmouth School" },
+    pools = { "Floating Wreckage", "Oily Blackmouth School", "Stonescale Eel Swarm", "Patch of Elemental Water" },
     fish = { { "Darkclaw Lobster", 13888 }, { "Deviate Fish", 6522 }, { "Firefin Snapper", 6359 }, { "Large Raw Mightfish", 13893 }, { "Lightning Eel", 13757 }, { "Oily Blackmouth", 6358 }, { "Raw Brilliant Smallfish", 6291 }, { "Raw Bristle Whisker Catfish", 6308 }, { "Raw Glossy Mightfish", 13754 }, { "Raw Longjaw Mud Snapper", 6289 }, { "Raw Mithril Head Trout", 8365 }, { "Raw Nightfin Snapper", 13759 }, { "Raw Redgill", 13758 }, { "Raw Rockscale Cod", 6362 }, { "Raw Spotted Yellowtail", 4603 }, { "Raw Summer Bass", 13756 }, { "Raw Sunscale Salmon", 13760 }, { "Raw Winter Squid", 13755 }, { "Stonescale Eel", 13422 } },
   },
   [1448] = {
@@ -199,6 +202,7 @@ ns.ZONE_DATA = {
   [1449] = {
     herbs = { "Sungrass", "Blindweed", "Golden Sansam", "Dreamfoil", "Mountain Silversage" },
     ores = { "Gold Vein", "Mithril Deposit", "Truesilver Deposit", "Small Thorium Vein", "Rich Thorium Vein" },
+    pools = { "Greater Sagefish School" },
     fish = { { "Lightning Eel", 13757 }, { "Oily Blackmouth", 6358 }, { "Raw Mithril Head Trout", 8365 }, { "Raw Nightfin Snapper", 13759 }, { "Raw Redgill", 13758 }, { "Raw Sunscale Salmon", 13760 } },
   },
   [1450] = {
