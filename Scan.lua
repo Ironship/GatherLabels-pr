@@ -17,9 +17,14 @@ local STEPS = { 7, 5, 3 } -- pixels between asked points, by scan detail
 local FRAME_BUDGET = 1    -- milliseconds of asking per frame (a sweep takes a few more frames, each one stays smooth)
 local REST = 0.5          -- seconds between scans while you move
 local REST_STILL = 2      -- seconds between scans while you stand still (nodes don't move)
+local MAX_EMPTY_REST = 5  -- cap backoff when no dots are in range
 
 local available = Minimap and Minimap.UpdateMouseoverAtPoint ~= nil
   and C_TooltipInfo ~= nil and C_TooltipInfo.GetMinimapMouseover ~= nil
+
+local secretBlocked = false
+local emptySweeps = 0
+local sweep, rest = nil, 0
 
 ns.liveDots = nil -- last scan's dots: { name, x, y, spot }, nil when not scanning
 
@@ -28,7 +33,21 @@ function ns.ScannerAvailable()
 end
 
 function ns.ScannerRunning()
-  return available and ns.db and ns.db.scan and ns.db.enabled
+  return available and not secretBlocked and ns.db and ns.db.scan and ns.db.enabled
+end
+
+function ns.ScannerSweeping()
+  return sweep ~= nil
+end
+
+function ns.HasLiveDots()
+  return ns.liveDots ~= nil and #ns.liveDots > 0
+end
+
+function ns.ResetScanner()
+  secretBlocked = false
+  emptySweeps = 0
+  rest = 0
 end
 
 ---------------------------------------------------------------------------
@@ -64,9 +83,15 @@ end
 
 -- Adds every herb, ore, fishing pool or chest in the minimap's current
 -- mouseover to `out`, as { name, level, other }.
+-- Returns true if the client returned a secret value (blocked client).
 local function ReadNames(out)
   local ok, data = pcall(C_TooltipInfo.GetMinimapMouseover)
-  if not ok or type(data) ~= "table" or type(data.lines) ~= "table" then return end
+  if not ok then return false end
+  if IsSecret(data) then
+    secretBlocked = true
+    return true
+  end
+  if type(data) ~= "table" or type(data.lines) ~= "table" then return false end
   for _, line in ipairs(data.lines) do
     local text = line.leftText
     if text == nil and type(line.args) == "table" then
@@ -74,7 +99,11 @@ local function ReadNames(out)
         if arg.field == "leftText" then text = arg.stringVal end
       end
     end
-    if type(text) == "string" and not IsSecret(text) then
+    if IsSecret(text) then
+      secretBlocked = true
+      return true
+    end
+    if type(text) == "string" then
       local carried -- a colour code runs on into the next part until its |r
       for part in (text .. "\n"):gmatch("(.-)\n") do
         local colour = part:match("^%s*|T[^|]*|t%s*|c%x%x(%x%x%x%x%x%x)")
@@ -89,6 +118,7 @@ local function ReadNames(out)
       end
     end
   end
+  return false
 end
 
 -- The minimap as it lies this frame: where it is on screen and how its
@@ -111,7 +141,7 @@ local names = {} -- reused for every point, so asking makes no garbage
 local function AskAt(ctx, ox, oy, hits)
   wipe(names)
   if pcall(Minimap.UpdateMouseoverAtPoint, Minimap, (ctx.cx + ox) * ctx.scale, (ctx.cy + oy) * ctx.scale) then
-    ReadNames(names)
+    if ReadNames(names) then return -1 end
   end
   if #names == 0 then return 0 end
   local sx, sy = ox * ctx.yardsPerPixel, oy * ctx.yardsPerPixel
@@ -204,32 +234,38 @@ end
 -- The scan loop
 ---------------------------------------------------------------------------
 
-local sweep, rest = nil, 0
 local driver = CreateFrame("Frame")
 local lastSpot -- where the last scan was made, to scan less often when nothing moved
+local sweepState = { points = nil, index = 1, hits = {}, step = 2, move = false, needSlide = false }
 
 -- No herb, ore, fish or treasure tracking on: no dots to read, so no scans.
 local FIND_SPELLS = { [2383] = true, [2580] = true, [43308] = true, [2481] = true }
+local findSpellNames
 local tracking = true
+
+local function CheckTrackingInner()
+  local found, active = false, false
+  for i = 1, C_Minimap.GetNumTrackingTypes() do
+    local info = C_Minimap.GetTrackingInfo(i)
+    if info and ((info.spellID and FIND_SPELLS[info.spellID]) or findSpellNames[info.name]) then
+      found = true
+      active = active or info.active
+    end
+  end
+  return found, active
+end
+
 local function UpdateTracking()
   tracking = true
   if not (C_Minimap and C_Minimap.GetNumTrackingTypes and C_Minimap.GetTrackingInfo) then return end
-  local names = {}
-  for id in pairs(FIND_SPELLS) do
-    local name = C_Spell and C_Spell.GetSpellName and C_Spell.GetSpellName(id)
-    if name then names[name] = true end
-  end
-  local ok, found, active = pcall(function()
-    local found, active = false, false
-    for i = 1, C_Minimap.GetNumTrackingTypes() do
-      local info = C_Minimap.GetTrackingInfo(i)
-      if info and ((info.spellID and FIND_SPELLS[info.spellID]) or names[info.name]) then
-        found = true
-        active = active or info.active
-      end
+  if not findSpellNames then
+    findSpellNames = {}
+    for id in pairs(FIND_SPELLS) do
+      local name = C_Spell and C_Spell.GetSpellName and C_Spell.GetSpellName(id)
+      if name then findSpellNames[name] = true end
     end
-    return found, active
-  end)
+  end
+  local ok, found, active = pcall(CheckTrackingInner)
   -- Only stop when the game clearly says none of them is on.
   if ok and found and not active then tracking = false end
 end
@@ -239,19 +275,41 @@ driver:SetScript("OnEvent", UpdateTracking)
 
 local sweep_x, sweep_y
 local function Finish(continent)
-  ns.liveDots = Dots(sweep.hits, sweep.step, IsIndoors and IsIndoors())
-  ns.liveContinent = continent
-  ns.liveScans = (ns.liveScans or 0) + 1
-  for _, dot in ipairs(ns.liveDots) do
-    ns.AddSighting(continent, dot.x, dot.y, dot.name, ns.Category(dot.name), false, dot.cave)
-  end
+  local prevCount = ns.liveDots and #ns.liveDots or 0
+  local dots = Dots(sweep.hits, sweep.step, IsIndoors and IsIndoors())
   sweep = nil
+  if #dots > 0 then
+    ns.liveDots = dots
+    ns.liveContinent = continent
+    ns.liveScans = (ns.liveScans or 0) + 1
+    emptySweeps = 0
+    for _, dot in ipairs(dots) do
+      ns.AddSighting(continent, dot.x, dot.y, dot.name, ns.Category(dot.name), false, dot.cave)
+    end
+  else
+    ns.liveDots = nil
+    ns.liveContinent = continent
+    if prevCount > 0 then
+      ns.liveScans = (ns.liveScans or 0) + 1
+    end
+    emptySweeps = emptySweeps + 1
+  end
   local here = lastSpot
+  local radius = ns.MinimapRadius()
+  local facing = ns.MinimapFacing()
   local moved = not here or here.continent ~= continent or (here.x - sweep_x) ^ 2 + (here.y - sweep_y) ^ 2 > 4
-    or here.radius ~= ns.MinimapRadius() or here.facing ~= ns.MinimapFacing()
-  lastSpot = { continent = continent, x = sweep_x, y = sweep_y, radius = ns.MinimapRadius(), facing = ns.MinimapFacing() }
-  rest = moved and REST or REST_STILL
-  if ns.RefreshPins then ns.RefreshPins() end
+    or here.radius ~= radius or here.facing ~= facing
+  if not lastSpot then lastSpot = {} end
+  lastSpot.continent, lastSpot.x, lastSpot.y, lastSpot.radius, lastSpot.facing = continent, sweep_x, sweep_y, radius, facing
+  local baseRest = moved and REST or REST_STILL
+  if #dots == 0 then
+    rest = math.min(MAX_EMPTY_REST, baseRest * math.min(4, emptySweeps))
+  else
+    rest = baseRest
+  end
+  if (prevCount > 0 or #dots > 0) and ns.RefreshPins then
+    ns.RefreshPins()
+  end
 end
 
 local function Abort()
@@ -314,7 +372,13 @@ local function Step(elapsed)
     rest = rest - elapsed
     if rest > 0 then return end
     local step = STEPS[ns.db.scanDetail] or STEPS[2]
-    sweep = { points = Grid(step), index = 1, hits = {}, step = step, move = ns.db.scanMode == "move" }
+    for k in pairs(sweepState.hits) do sweepState.hits[k] = nil end
+    sweepState.points = Grid(step)
+    sweepState.index = 1
+    sweepState.step = step
+    sweepState.move = ns.db.scanMode == "move"
+    sweepState.needSlide = false
+    sweep = sweepState
     if sweep.move then
       if IsMouselooking and IsMouselooking() then sweep = nil; rest = REST; return end
       SlideUnderMouse()
@@ -335,7 +399,13 @@ local function Step(elapsed)
   local budget = sweep.move and 25 or FRAME_BUDGET
   while sweep.index <= #points do
     local p = points[sweep.index]
-    AskAt(ctx, p[1], p[2], sweep.hits)
+    if AskAt(ctx, p[1], p[2], sweep.hits) < 0 then
+      PutBack()
+      sweep = nil
+      ns.liveDots = nil
+      if ns.RefreshPins then ns.RefreshPins() end
+      return
+    end
     sweep.index = sweep.index + 1
     if debugprofilestop() - started > budget then break end
   end
@@ -361,25 +431,35 @@ function ns.ScanTest()
     ns.Print("This game version can't read the minimap dots, so Gather Labels uses saved spots here.")
     return
   end
+  ns.ResetScanner()
   local function Run(label)
     local ctx = Context()
     if not ctx then
       ns.Print(label .. ": can't scan here (no position, or rotating minimap with no facing).")
       return
     end
-    local hits, asked, named = {}, 0, 0
+    local hits, asked, named, blocked = {}, 0, 0, false
     local step = STEPS[2]
     for _, p in ipairs(Grid(step)) do
       asked = asked + 1
-      named = named + AskAt(ctx, p[1], p[2], hits)
+      local n = AskAt(ctx, p[1], p[2], hits)
+      if n < 0 then
+        blocked = true
+        break
+      end
+      named = named + n
+    end
+    if blocked then
+      ns.Print(label .. ": client returned secret tooltip values (minimap dot reading is restricted on this client build).")
+      return
     end
     local dots = Dots(hits, step, IsIndoors and IsIndoors())
-    local names = {}
+    local dotNames = {}
     for _, dot in ipairs(dots) do
-      names[#names + 1] = dot.name .. (dot.level and (" (" .. dot.level .. ")") or "") .. (dot.cave and " (cave)" or "")
+      dotNames[#dotNames + 1] = dot.name .. (dot.level and (" (" .. dot.level .. ")") or "") .. (dot.cave and " (cave)" or "")
     end
     ns.Print(string.format("%s: asked %d points, %d answers, %d dots: %s", label, asked, named,
-      #dots, #names > 0 and table.concat(names, ", ") or "none"))
+      #dots, #dotNames > 0 and table.concat(dotNames, ", ") or "none"))
   end
   Run("direct")
   SlideUnderMouse()

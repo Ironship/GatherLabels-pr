@@ -246,7 +246,8 @@ local function Update(continent, px, py, facing, radius)
 
     -- WoW Forever: the dots the scanner just read (Scan.lua).
     local live = ns.liveContinent == continent and ns.liveDots or nil
-    if live then
+    local hasLive = live ~= nil and #live > 0
+    if hasLive then
       for i = 1, #live do
         local dot = live[i]
         if ns.IsDrawn(dot.name) then
@@ -256,12 +257,11 @@ local function Update(continent, px, py, facing, radius)
     end
     local liveEnd = numCandidates
 
-    -- Saved spots: all of them on other game versions; on Forever only if
-    -- asked for, faded, and not where a dot was just read.
+    -- Saved spots: all of them when the scanner has no live dots; on Forever
+    -- with live dots only if asked for, faded, and not where a dot was just read.
     local cells = db.spots[continent]
-    local scanning = ns.ScannerRunning()
-    if cells and (not scanning or db.showSaved) then
-      local alpha = scanning and 0.5 or 1
+    if cells and (not hasLive or db.showSaved) then
+      local alpha = hasLive and 0.5 or 1
       local cell = ns.CELL
       local minCX, maxCX = math.floor((px - radius) / cell), math.floor((px + radius) / cell)
       local minCY, maxCY = math.floor((py - radius) / cell), math.floor((py + radius) / cell)
