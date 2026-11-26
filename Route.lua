@@ -315,15 +315,13 @@ local function DrawRoute(continent, px, py, facing)
   if route and route.continent == continent and enabled then
     local pixelsPerYard = half / radius
     local cos, sin = math.cos(facing), math.sin(facing)
-    local function Screen(s)
-      local north, east = s.x - px, py - s.y
-      return (east * cos + north * sin) * pixelsPerYard, (north * cos - east * sin) * pixelsPerYard
-    end
     local n = #route.stops
     for i = 1, n do
       local a, b = route.stops[i], route.stops[i % n + 1]
-      local x1, y1 = Screen(a)
-      local x2, y2 = Screen(b)
+      local na, ea = a.x - px, py - a.y
+      local nb, eb = b.x - px, py - b.y
+      local x1, y1 = (ea * cos + na * sin) * pixelsPerYard, (na * cos - ea * sin) * pixelsPerYard
+      local x2, y2 = (eb * cos + nb * sin) * pixelsPerYard, (nb * cos - eb * sin) * pixelsPerYard
       local cx1, cy1, cx2, cy2 = Clip(x1, y1, x2, y2, half - 2, square)
       if cx1 then
         local line = GetLine()

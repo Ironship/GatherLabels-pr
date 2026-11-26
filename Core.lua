@@ -328,19 +328,24 @@ local function Readable(text)
 end
 ns.Readable = Readable
 
+local tooltipNames = {}
 local function TooltipNames()
-  local names = {}
+  wipe(tooltipNames)
   for i = 1, GameTooltip:NumLines() do
     local line = _G["GameTooltipTextLeft" .. i]
     local text = line and line:GetText()
     if Readable(text) then
       for part in (text .. "\n"):gmatch("(.-)\n") do
         local name = ns.Canon(Clean(part))
-        if ns.Category(name) then names[#names + 1] = name end
+        if ns.Category(name) then tooltipNames[#tooltipNames + 1] = name end
       end
     end
   end
-  return names
+  return tooltipNames
+end
+
+local function ReadLeft1Text()
+  return GameTooltipTextLeft1 and GameTooltipTextLeft1:GetText()
 end
 
 -- Fishing pools are often seen in the world rather than on the minimap.
@@ -349,7 +354,7 @@ end
 local lastWorldText
 local function LearnWorldHover()
   if GameTooltip:GetOwner() == Minimap or GameTooltip:GetUnit() then return end
-  local ok, text = pcall(function() return GameTooltipTextLeft1:GetText() end)
+  local ok, text = pcall(ReadLeft1Text)
   if not ok or not Readable(text) or text == lastWorldText then return end
   lastWorldText = text
   local name = ns.Canon(Clean(text))
@@ -380,7 +385,7 @@ watcher:SetScript("OnUpdate", function(_, elapsed)
     lastText, lastX, lastY = nil, nil, nil
     return
   end
-  local ok, text = pcall(function() return GameTooltipTextLeft1:GetText() end)
+  local ok, text = pcall(ReadLeft1Text)
   if not ok or not Readable(text) then return end
   -- Same text: only a new spot if the mouse moved on to another dot.
   local cx, cy = GetCursorPosition()
