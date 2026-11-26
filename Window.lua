@@ -57,7 +57,7 @@ local function NodeList(parent, category, width)
         -- Skill it needs, coloured against yours.
         local need, _, color = ns.SkillInfo(name)
         row.text:SetText(need and (name .. "  |cff" .. color .. need .. "|r") or name)
-        row:SetAlpha(ns.TooLow(name) and 0.5 or 1)
+        row:SetAlpha((ns.TooLow(name) or ns.IsGrey(name)) and 0.5 or 1)
         local n = counts[name] or 0
         row.count:SetText(n == 0 and "" or n == 1 and "1 spot" or (n .. " spots"))
       end
@@ -113,6 +113,9 @@ local function BuildSettingsPage(page)
     function(on) ns.Set("showSaved", on) end, "Spots you've found before show faded while nothing has spawned there.")
   page.hideAboveCheck = S.Check(page, "Hide nodes my skill is too low for", nil,
     function(on) ns.Set("hideAbove", on) end)
+  page.hideGreyCheck = S.Check(page, "Hide grey nodes (no skill-ups)", nil,
+    function(on) ns.Set("hideGrey", on) end,
+    "Hides herbs and ore on the minimap that no longer give gathering skill points.")
   page.minimapCheck = S.Check(page, "Show minimap button", nil,
     function(on) ns.SetMinimapShown(on) end)
   -- Stack the ticks this game uses, with no gaps for the ones it hides:
@@ -121,8 +124,9 @@ local function BuildSettingsPage(page)
   page.scanCheck:SetShown(scanner)
   page.savedCheck:SetShown(scanner)
   page.hideAboveCheck:SetShown(ns.SkillApplies())
+  page.hideGreyCheck:SetShown(ns.SkillApplies())
   local y = S.Stack({ page.enabledCheck, page.labelsCheck, page.hoverCheck, page.scanCheck,
-    page.savedCheck, page.hideAboveCheck, page.minimapCheck }, 0, -20)
+    page.savedCheck, page.hideAboveCheck, page.hideGreyCheck, page.minimapCheck }, 0, -20)
 
   y = y - 10
   S.Header(page, "While gathering", 0, y, W)
@@ -363,6 +367,7 @@ function ns.OnSettingsChanged()
   page.scanCheck:SetChecked(db.scan)
   page.savedCheck:SetChecked(db.showSaved)
   page.hideAboveCheck:SetChecked(db.hideAbove)
+  page.hideGreyCheck:SetChecked(db.hideGrey)
   page.markCheck:SetChecked(db.worldMark)
   page.trackerCheck:SetChecked(db.tracker)
   page.shineCheck:SetChecked(db.autoShine)
