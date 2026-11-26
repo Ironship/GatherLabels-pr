@@ -25,6 +25,22 @@ local function OnClick(_, mouseButton)
   end
 end
 
+local function AppendResourceList(prefix, names)
+  if not names or #names == 0 then return end
+  local parts = {}
+  for i = 1, #names do
+    local n = names[i]
+    local need, have, color = ns.SkillInfo and ns.SkillInfo(n)
+    if need then
+      local colored = have and ("|cff" .. color .. n .. "|r") or n
+      parts[i] = colored .. " |cffaaaaaa(" .. need .. ")|r"
+    else
+      parts[i] = n
+    end
+  end
+  GameTooltip:AddLine(prefix .. table.concat(parts, ", "), 0.82, 0.82, 0.82, true)
+end
+
 local function Build()
   button = CreateFrame("Button", "GatherLabelsMinimapButton", Minimap)
   button:SetSize(31, 31)
@@ -58,6 +74,40 @@ local function Build()
       { "Shift-click", "Sparkle the nearest node" },
       { "Drag", "Move this button" },
     })
+    local mapID = (ns.ZoneMap and ns.ZoneMap()) or (C_Map and C_Map.GetBestMapForUnit and C_Map.GetBestMapForUnit("player"))
+    local z = mapID and ns.ZONE_DATA and ns.ZONE_DATA[mapID]
+    if z then
+      local info = C_Map and C_Map.GetMapInfo and C_Map.GetMapInfo(mapID)
+      local zoneName = info and info.name
+      GameTooltip:AddLine(" ")
+      GameTooltip:AddLine(zoneName and ("In this zone (" .. zoneName .. "):") or "In this zone:", 1, 0.82, 0)
+      AppendResourceList("|cffffd100Herbs:|r ", z.herbs)
+      AppendResourceList("|cffffd100Ore:|r ", z.ores)
+      local fishParts = {}
+      if z.pools then
+        for i = 1, #z.pools do
+          fishParts[#fishParts + 1] = "|cff70c8e0" .. z.pools[i] .. "|r"
+        end
+      end
+      if z.fish then
+        local maxFish = 6
+        local shown = math.min(#z.fish, maxFish)
+        for i = 1, shown do
+          local f = z.fish[i]
+          local fname = (C_Item and C_Item.GetItemNameByID and C_Item.GetItemNameByID(f[2]))
+            or (GetItemInfo and GetItemInfo(f[2]))
+            or f[1]
+          fishParts[#fishParts + 1] = fname
+        end
+        if #z.fish > maxFish then
+          fishParts[#fishParts + 1] = "|cffaaaaaa+" .. (#z.fish - maxFish) .. " more|r"
+        end
+      end
+      if #fishParts > 0 then
+        GameTooltip:AddLine("|cffffd100Fish:|r " .. table.concat(fishParts, ", "), 0.82, 0.82, 0.82, true)
+      end
+      GameTooltip:Show()
+    end
   end)
   button:SetScript("OnLeave", function() GameTooltip:Hide() end)
 

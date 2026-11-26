@@ -518,6 +518,8 @@ SlashCmdList.GATHERLABELS = function(msg)
     ns.StartRoute()
   elseif msg == "stop" then
     ns.StopRoute()
+  elseif msg == "zone" then
+    if ns.ShowZoneTab then ns.ShowZoneTab() end
   elseif msg == "shine" then
     ns.ToggleShine()
   elseif msg == "glow" then
@@ -539,6 +541,7 @@ SlashCmdList.GATHERLABELS = function(msg)
   elseif msg == "help" then
     ns.Print("/glabels opens Settings. /glabels on|off shows or hides the icons. "
       .. "/glabels minimap shows or hides the minimap button. "
+      .. "/glabels zone shows herbs, ore and fish in this zone. "
       .. "/glabels route starts a farming route in this zone, /glabels stop ends it. "
       .. "/glabels session shows or hides the session tracker, /glabels reset starts a new session. "
       .. "/glabels shine turns the sparkle on the nearest node on or off. "
