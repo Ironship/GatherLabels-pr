@@ -1,0 +1,5 @@
+<Bindings>
+  <Binding name="GATHERLABELS_SHINE" header="GATHERLABELS" category="ADDONS">
+    GatherLabels_ToggleShine()
+  </Binding>
+</Bindings>
