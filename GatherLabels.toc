@@ -2,7 +2,7 @@
 ## Title: Gather Labels
 ## Notes: Shows which herb, ore, fishing pool or chest each minimap dot is. The herb, vein or chest in front of you glows in its own colour. Click an icon for an arrow and a sparkle on it, follow a farming route, track your gathering session. Type /glabels for settings.
 ## Author: SlimyTaco
-## Version: 1.9.5
+## Version: 1.9.6
 ## X-Curse-Project-ID: 1787326
 ## SavedVariables: GatherLabelsDB
 ## IconTexture: Interface\Icons\INV_Misc_Flower_02
