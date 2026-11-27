@@ -442,20 +442,51 @@ local function Redraw()
   for i = badgesUsed + 1, #badges do badges[i]:Hide() end
 end
 
+local function TargetFrameLevel(canvas)
+  local base = (canvas:GetFrameLevel() or 1) + 10
+  local mgr = WorldMapFrame and WorldMapFrame.pinFrameLevelsManager
+  if mgr and mgr.GetValidFrameLevel then
+    local best = base
+    for _, key in ipairs({ "PIN_FRAME_LEVEL_MAP_EXPLORATION", "PIN_FRAME_LEVEL_MAP_HIGHLIGHT", "PIN_FRAME_LEVEL_AREA_POI" }) do
+      local ok, lvl = pcall(mgr.GetValidFrameLevel, mgr, key)
+      if ok and type(lvl) == "number" and lvl > best then best = lvl end
+    end
+    if best > base then
+      local want = best + 25
+      local okP, playerLvl = pcall(mgr.GetValidFrameLevel, mgr, "PIN_FRAME_LEVEL_PLAYER")
+      if okP and type(playerLvl) == "number" and playerLvl > best + 10 then
+        want = math.min(want, playerLvl - 10)
+      end
+      return want
+    end
+  end
+  return math.max(base, 2200)
+end
+
+local function SyncFrameLevels()
+  if not overlay then return end
+  local canvas = GetCanvas()
+  if not canvas then return end
+  local lvl = TargetFrameLevel(canvas)
+  overlay:SetFrameLevel(lvl)
+  if routeLayer then routeLayer:SetFrameLevel(lvl + 2) end
+  for i = 1, #pins do pins[i]:SetFrameLevel(lvl + 5) end
+  for i = 1, #badges do badges[i]:SetFrameLevel(lvl + 8) end
+end
+
 local function EnsureOverlay()
   if overlay then return true end
   local canvas = GetCanvas()
   if not canvas then return false end
   overlay = CreateFrame("Frame", "GatherLabelsMapOverlay", canvas)
   overlay:SetAllPoints(canvas)
-  overlay:SetFrameLevel((canvas:GetFrameLevel() or 1) + 10)
   overlay:EnableMouse(false)
   overlay:Hide()
 
   routeLayer = CreateFrame("Frame", nil, overlay)
   routeLayer:SetAllPoints(overlay)
-  routeLayer:SetFrameLevel((overlay:GetFrameLevel() or 1) + 2)
   routeLayer:EnableMouse(false)
+  SyncFrameLevels()
 
   overlay:SetScript("OnUpdate", function(_, elapsed)
     wait = wait + elapsed
@@ -476,6 +507,7 @@ local function SyncVisibility()
     return
   end
   if not EnsureOverlay() then return end
+  SyncFrameLevels()
   if WorldMapFrame:IsShown() then
     overlay:Show()
     dirty = true
