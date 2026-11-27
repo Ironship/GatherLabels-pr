@@ -588,25 +588,30 @@ end
 
 -- Clean action icon (herb plant, mining pickaxe, fishing hook, chest loot)
 -- instead of a glow: kept outside `pieces` and in BLEND mode so Tint()
--- never dyes the icon itself.
-art.actionIcon = art:CreateTexture(nil, "ARTWORK", nil, 4)
-art.actionIcon:SetBlendMode("BLEND")
-art.actionIcon:SetSize(40, 40)
-art.actionIcon:SetPoint("CENTER", art, "CENTER", 0, 0)
-art.actionIcon:Hide()
+-- never dyes the icon itself. Separate parent frame keeps idle breathing
+-- and the in-reach pop on distinct regions so they never fight or snap.
+art.iconFrame = CreateFrame("Frame", nil, art)
+art.iconFrame:SetSize(40, 40)
+art.iconFrame:SetPoint("CENTER", art, "CENTER", 0, 0)
+art.iconFrame:Hide()
 
-art.iconBob = art.actionIcon:CreateAnimationGroup()
+art.actionIcon = art.iconFrame:CreateTexture(nil, "ARTWORK", nil, 4)
+art.actionIcon:SetBlendMode("BLEND")
+art.actionIcon:SetAllPoints(art.iconFrame)
+if art.actionIcon.SetSnapToPixelGrid then
+  art.actionIcon:SetSnapToPixelGrid(false)
+  art.actionIcon:SetTexelSnappingBias(0)
+end
+
+art.iconBob = art.iconFrame:CreateAnimationGroup()
 art.iconBob:SetLooping("BOUNCE")
-local bob = art.iconBob:CreateAnimation("Translation")
-bob:SetOffset(0, 5)
-bob:SetDuration(1.1)
-bob:SetSmoothing("IN_OUT")
+Scale(art.iconBob, 0.94, 1.06, 1.1):SetSmoothing("IN_OUT")
 
 art.iconPop = art.actionIcon:CreateAnimationGroup()
-local popUp = Scale(art.iconPop, 1, 1.28, 0.14)
+local popUp = Scale(art.iconPop, 1, 1.25, 0.14)
 popUp:SetOrder(1)
 popUp:SetSmoothing("OUT")
-local popDown = Scale(art.iconPop, 1, 1 / 1.28, 0.22)
+local popDown = Scale(art.iconPop, 1.25, 1, 0.22)
 popDown:SetOrder(2)
 popDown:SetSmoothing("IN_OUT")
 
@@ -734,10 +739,10 @@ local SHOW = {
   ring = { band = true, ripple = true, pool = true, loops = { "bandAnim", "rippleAnim" } },
   embers = { halo = true, loops = { "breathe" } },
   aura = { auraA = true, auraB = true, halo = true, loops = { "flickA", "flickB", "surge", "breathe" } },
-  icon = { actionIcon = true, loops = { "iconBob" } },
+  icon = { iconFrame = true, loops = { "iconBob" } },
 }
 
-local PARTS = { "halo", "pool", "ripple", "band", "beam", "core", "rays", "star", "auraA", "auraB", "pulse1", "pulse2", "actionIcon" }
+local PARTS = { "halo", "pool", "ripple", "band", "beam", "core", "rays", "star", "auraA", "auraB", "pulse1", "pulse2", "iconFrame" }
 local function ApplyStyle()
   local style = Style()
   local show = SHOW[style]
